@@ -41,23 +41,17 @@ colorbar;
 
 pose = start_pose;
 dist = 20;
-direction = 'inc';
+direction = "
 goal = [start_pose(1) start_pose(2) + dist]
 while(true)
     map = updateMap(pose, map, occupancy_map, 150);
 
-    if(direction == 'inc')
-        if(pose(2) - start_pose(2) > dist)
-            direction = 'dec';
-        end
-        pose(2) = pose(2) + 1;
-    end
-    
-    if(direction == 'dec')
-        if(pose(2) - start_pose(2) < -dist)
-            direction = 'inc';
-        end
+    np = pose(2) - start_pose(2);
+    if(np > dist)
+        goal(2) = goal(2)-2*dist;
         pose(2) = pose(2) - 1;
+    else
+        pose(2) = pose(2) + 1;
     end
     
     figure(2)
