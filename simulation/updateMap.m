@@ -71,5 +71,5 @@ function map = updateMap(pose, map, occupancy_map, radius)
             end
             map(pose(1), pose(2)) = 4;
         end
-    end  
+    end
 end
