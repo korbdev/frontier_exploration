@@ -2,6 +2,7 @@ classdef Map < handle
     properties
         occupancy_map;
         visibility_map;
+        color_map;
     end
     methods
         function obj = Map(path, color_map)
@@ -11,6 +12,7 @@ classdef Map < handle
             %Explored Map
             obj.visibility_map = ones(size(obj.occupancy_map));
             obj.visibility_map = obj.visibility_map*2;
+            obj.color_map = color_map;
         end
         
         function update(obj, pose, radius)
@@ -35,6 +37,9 @@ classdef Map < handle
               j = 1;
               updateView(obj, pose, [j i], radius);
            end
+           %figure(2)
+           %imshow(ind2rgb(obj.visibility_map, obj.color_map))
+           %colormap(obj.color_map);
         end
         
         function updateView(obj, pose, pose_to, radius)

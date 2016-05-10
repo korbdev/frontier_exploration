@@ -15,14 +15,17 @@ map = Map(path, cmap);
 pose = start_pose;
 dist = 50;
 direction = 'inc';
-goal = [start_pose(1) start_pose(2) + dist]
+goal = [start_pose(1) start_pose(2) + dist];
 
 
-%r = Robot(start_pose, map)
+r = Robot(10, start_pose, map, 150, cmap);
 
 while(true)
-    update(map, pose, 170);
+    %update(map, pose, 100);
     
+    r.moveY(1);
+    
+    %{
     if(direction == 'inc')
         if(pose(2) - start_pose(2) > dist)
             direction = 'dec';
@@ -38,9 +41,10 @@ while(true)
     end
     
     
-    figure(2)
-    imshow(ind2rgb(map.visibility_map, cmap))
-    colormap(cmap);
+    %figure(2)
+    %imshow(ind2rgb(map.visibility_map, cmap))
+    %colormap(cmap);
     
-    pause(0.01);
+    %pause(0.001);
+    %}
 end
