@@ -5,46 +5,32 @@ white = [1 1 1];
 red = [1 0 0];
 
 cmap = [black; grey; white; red];
-
-start_pose = [240 240];
-
 path = '~/research/frontier_exploration/map.bmp';
-map = Map(path, cmap);
+occupancy_map_pixel = imread(path);
+occupancy_map = rgb2ind(occupancy_map_pixel,cmap);
 
+map = Map(occupancy_map);
 
-pose = start_pose;
-dist = 50;
-direction = 'inc';
-goal = [start_pose(1) start_pose(2) + dist];
-
-
-r = Robot(10, start_pose, map, 150, cmap);
-
-while(true)
-    %update(map, pose, 100);
-    
-    r.moveY(1);
-    
-    %{
-    if(direction == 'inc')
-        if(pose(2) - start_pose(2) > dist)
-            direction = 'dec';
-        end
-        pose(2) = pose(2) + 1;
-    end
-    
-    if(direction == 'dec')
-        if(pose(2) - start_pose(2) < -dist)
-            direction = 'inc';
-        end
-        pose(2) = pose(2) - 1;
-    end
-    
-    
-    %figure(2)
-    %imshow(ind2rgb(map.visibility_map, cmap))
-    %colormap(cmap);
-    
-    %pause(0.001);
-    %}
+r = Robot(10, [240 240], map, 100);
+set(0,'RecursionLimit',10000)
+%fillMap([240 240], occupancy_map, cmap);
+%figure(1)
+%fill_img = ind2rgb(occupancy_map, cmap);
+%imshow(fill_img);
+       
+for i = 1:50
+   r.moveY(1);
+   if mod(i,1) == 0
+       draw(r, map, cmap);
+       drawTrajectory(r, map, cmap);
+   end
+   pause(0.001);
 end
+
+
+
+%while(true)
+%    r.moveY(1);
+%    draw(r, map, cmap);
+%    r.trajectory
+%end

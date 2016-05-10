@@ -2,17 +2,47 @@ classdef Map < handle
     properties
         occupancy_map;
         visibility_map;
-        color_map;
+        frontier_map;
     end
     methods
-        function obj = Map(path, color_map)
+        function obj = Map(indeximage)
             %Occupancy Map
-            occupancy_map_pixel = imread(path);
-            obj.occupancy_map = rgb2ind(occupancy_map_pixel,color_map);
+            obj.occupancy_map = indeximage;
             %Explored Map
             obj.visibility_map = ones(size(obj.occupancy_map));
             obj.visibility_map = obj.visibility_map*2;
-            obj.color_map = color_map;
+            %Frontier Map 
+            obj.frontier_map = zeros(size(obj.occupancy_map));
+        end
+        
+        function createFrontierMap(obj)
+            obj.frontier_map = zeros(size(obj.occupancy_map));
+            [n, m] = size(obj.occupancy_map);
+            for j = 2:m-1
+                for i = 2:n-1
+                     if isFrontier(obj, j , i) == 1
+                       obj.frontier_map(j, i) = 2;
+                     end
+                end
+            end
+        end
+        
+        function f = isFrontier(obj, x, y)
+            f = 0;
+            if obj.visibility_map(x, y) == 3
+               if obj.visibility_map(x-1, y) == 2
+                   f = 1; 
+               end
+               if obj.visibility_map(x+1, y) == 2
+                   f = 1; 
+               end
+               if obj.visibility_map(x, y+1) == 2
+                   f = 1; 
+               end
+               if obj.visibility_map(x, y-1) == 2
+                   f = 1; 
+               end
+            end
         end
         
         function update(obj, pose, radius)
@@ -37,9 +67,6 @@ classdef Map < handle
               j = 1;
               updateView(obj, pose, [j i], radius);
            end
-           %figure(2)
-           %imshow(ind2rgb(obj.visibility_map, obj.color_map))
-           %colormap(obj.color_map);
         end
         
         function updateView(obj, pose, pose_to, radius)
@@ -113,7 +140,7 @@ classdef Map < handle
                     y = y + y_step;
                 end
             end
-            obj.visibility_map(pose(1), pose(2)) = 4;
+            %obj.visibility_map(pose(1), pose(2)) = 4;
         end
     end
 end
