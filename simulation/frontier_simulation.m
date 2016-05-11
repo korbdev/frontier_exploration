@@ -12,20 +12,33 @@ occupancy_map = rgb2ind(occupancy_map_pixel,cmap);
 map = Map(occupancy_map);
 
 r = Robot(10, [240 240], map, 100);
-set(0,'RecursionLimit',10000)
+
+planner = Planner(r);
+path = planner.plan([240 240],[400 400], occupancy_map);
+
+[m, n] = size(occupancy_map);
+path_ind = ones(m,n);
+
+for i = 1:size(path,1)
+   point = path(i,:);
+   occupancy_map(point(1), point(2)) = 4;
+end
+
+path_img = ind2rgb(occupancy_map, cmap);
+imshow(path_img);
 %fillMap([240 240], occupancy_map, cmap);
 %figure(1)
 %fill_img = ind2rgb(occupancy_map, cmap);
 %imshow(fill_img);
        
-for i = 1:50
-   r.moveY(1);
-   if mod(i,1) == 0
-       draw(r, map, cmap);
-       drawTrajectory(r, map, cmap);
-   end
-   pause(0.001);
-end
+%for i = 1:50
+%   r.moveY(1);
+%   if mod(i,1) == 0
+%       draw(r, map, cmap);
+%       drawTrajectory(r, map, cmap);
+%   end
+%   pause(0.001);
+%end
 
 
 
