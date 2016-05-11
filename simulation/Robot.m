@@ -13,9 +13,29 @@ classdef Robot < handle
             obj.map = map;
             obj.sensor_range = sensor_range;
         end
-        function pose = moveTo(obj, pose)
-            obj.pose
+        
+        function path = moveToFrontier(obj)
+           path = [];
+           planner = Planner(obj);
+           
+           obj.sense();
+           
+           idx = find(obj.map.frontier_map==2);
+           n = size(idx);
+           %r = a + (b-a).*rand(N,1)
+           random = floor(1 + (n-1).*rand(1));
+           frontier = idx(random(1));
+           
+           [i,j] = ind2sub(size(obj.map.frontier_map), frontier);
+           path = planner.plan(obj.pose, [i j], obj.map.visibility_map);
+           
         end
+        
+        function path = moveTo(obj, goal)
+            planner = Planner(obj);
+            path = planner.plan(obj.pose, goal, obj.map.occupancy_map);
+        end
+        
         function pose = moveY(obj, step_to_go)
             %SENSE
             obj.map.update(obj.pose, obj.sensor_range);
@@ -28,6 +48,7 @@ classdef Robot < handle
             end
             pose = obj.pose;
         end
+        
         function collision = checkCollision(obj, buffer)
             collision = 0;
             for i = 0:360
@@ -38,6 +59,11 @@ classdef Robot < handle
                     collision = 1;
                 end
             end
+        end
+        
+        function sense(obj)
+           obj.map.update(obj.pose, obj.sensor_range);
+           obj.map.createFrontierMap(); 
         end
     end
 end

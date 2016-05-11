@@ -58,17 +58,22 @@ classdef Planner < handle
             end
 
             position = goal
-            while(position ~= start)
+            %%while(position(1) ~= start(1) && position(2) ~= start(2))
+            while(~isequal(start, position))
                 index = parent(position(1), position(2));
                 i = floor(index / m);
                 j = mod(index, m);
                 path = [path; i j];
-                position = [i j];
+                position = [i j]
+                if position == [404, 240]
+                  fprintf('test');
+                end
             end
         end
         function feasible = isFeasibleTerrain(obj, terrain)
             feasible = 1;
-            if terrain == 0 || terrain == 1
+            %if terrain == 0 || terrain == 1
+            if terrain == 1
                 feasible = 0;
             end
         end
@@ -81,9 +86,9 @@ classdef Planner < handle
             collision = 0;
             for i = 0:360
                 r = ((2*pi)/360)*i;
-                x = int32(pose(1)+sin(r)*25 + buffer)+1;
-                y = int32(pose(2)+cos(r)*25 + buffer)+1;
-                if(map(x, y) == 0)
+                x = int32(pose(1)+sin(r)*10 + buffer)+1;
+                y = int32(pose(2)+cos(r)*10 + buffer)+1;
+                if(map(x, y) == 1)
                     collision = 1;
                 end
             end

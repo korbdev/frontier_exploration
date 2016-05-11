@@ -13,19 +13,93 @@ map = Map(occupancy_map);
 
 r = Robot(10, [240 240], map, 100);
 
-planner = Planner(r);
-path = planner.plan([240 240],[400 400], occupancy_map);
+%planner = Planner(r);
+%path = planner.plan([240 240],[410 60], occupancy_map);
 
-[m, n] = size(occupancy_map);
+%[m, n] = size(occupancy_map);
 path_ind = ones(m,n);
 
-for i = 1:size(path,1)
-   point = path(i,:);
-   occupancy_map(point(1), point(2)) = 4;
+%path = r.moveTo([420 100]);
+
+while true
+    path = r.moveToFrontier();
+    length = size(path,1);
+    for i = length:-1:1
+       point = path(i,:);
+       
+       %occupancy_map(point(1), point(2)) = 4;
+       r.pose = [point(1), point(2)];
+       sense(r);
+       draw(r, map, cmap);
+       pause(0.01);
+       %drawTrajectory(r, map, cmap);
+    end
+    draw(r, map, cmap);
+    pause(0.001);
 end
 
-path_img = ind2rgb(occupancy_map, cmap);
-imshow(path_img);
+%{
+length = size(path,1);
+for i = length:-1:1
+   point = path(i,:);
+   occupancy_map(point(1), point(2)) = 4;
+   r.pose = [point(1), point(2)];
+   draw(r, map, cmap);
+   pause(0.01);
+   %drawTrajectory(r, map, cmap);
+end
+
+path = r.moveTo([400 400]);
+
+length = size(path,1);
+for i = length:-1:1
+   point = path(i,:);
+   occupancy_map(point(1), point(2)) = 4;
+   r.pose = [point(1), point(2)];
+   draw(r, map, cmap);
+   pause(0.01);
+   %drawTrajectory(r, map, cmap);
+end
+
+path = r.moveTo([100 400]);
+
+length = size(path,1);
+for i = length:-1:1
+   point = path(i,:);
+   occupancy_map(point(1), point(2)) = 4;
+   r.pose = [point(1), point(2)];
+   draw(r, map, cmap);
+   pause(0.01);
+   %drawTrajectory(r, map, cmap);
+end
+
+path = r.moveTo([160 50]);
+
+length = size(path,1);
+for i = length:-1:1
+   point = path(i,:);
+   occupancy_map(point(1), point(2)) = 4;
+   r.pose = [point(1), point(2)];
+   draw(r, map, cmap);
+   pause(0.01);
+   %drawTrajectory(r, map, cmap);
+end
+
+path = r.moveTo([420 80]);
+
+length = size(path,1);
+for i = length:-1:1
+   point = path(i,:);
+   occupancy_map(point(1), point(2)) = 4;
+   r.pose = [point(1), point(2)];
+   draw(r, map, cmap);
+   pause(0.01);
+   %drawTrajectory(r, map, cmap);
+end
+%}
+
+%path_img = ind2rgb(occupancy_map, cmap);
+%imshow(path_img);
 %fillMap([240 240], occupancy_map, cmap);
 %figure(1)
 %fill_img = ind2rgb(occupancy_map, cmap);
