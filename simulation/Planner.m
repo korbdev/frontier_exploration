@@ -64,16 +64,13 @@ classdef Planner < handle
                 i = floor(index / m);
                 j = mod(index, m);
                 path = [path; i j];
-                position = [i j]
-                if position == [404, 240]
-                  fprintf('test');
-                end
+                position = [i j];
             end
         end
         function feasible = isFeasibleTerrain(obj, terrain)
             feasible = 1;
             %if terrain == 0 || terrain == 1
-            if terrain == 1
+            if terrain == 1 || terrain == 2
                 feasible = 0;
             end
         end
@@ -86,9 +83,9 @@ classdef Planner < handle
             collision = 0;
             for i = 0:360
                 r = ((2*pi)/360)*i;
-                x = int32(pose(1)+sin(r)*10 + buffer)+1;
-                y = int32(pose(2)+cos(r)*10 + buffer)+1;
-                if(map(x, y) == 1)
+                x = int32(pose(1)+sin(r)*(obj.robot.robot_size + buffer))+1;
+                y = int32(pose(2)+cos(r)*(obj.robot.robot_size + buffer))+1;
+                if(map(x, y) == 1 || map(x, y) == 2)
                     collision = 1;
                 end
             end

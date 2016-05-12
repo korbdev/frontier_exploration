@@ -2,6 +2,8 @@ classdef Robot < handle
     properties
         robot_size;
         pose;
+        goal;
+        frontier_point;
         map;
         sensor_range;
         trajectory;
@@ -12,6 +14,8 @@ classdef Robot < handle
             obj.pose = initial_pose;
             obj.map = map;
             obj.sensor_range = sensor_range;
+            obj.goal = [];
+            obj.frontier_point = [];
         end
         
         function path = moveToFrontier(obj)
@@ -25,9 +29,24 @@ classdef Robot < handle
            %r = a + (b-a).*rand(N,1)
            random = floor(1 + (n-1).*rand(1));
            frontier = idx(random(1));
-           
+   
            [i,j] = ind2sub(size(obj.map.frontier_map), frontier);
-           path = planner.plan(obj.pose, [i j], obj.map.visibility_map);
+           obj.goal = [i j];
+           obj.frontier_point = [i j];
+           draw(obj, obj.map);
+           %collision = planner.checkCollision(map, pose, obj.robot_size+1);
+           for k = 0:360
+                r = ((2*pi)/360)*k;
+                x = int32(i+sin(r)*(obj.robot_size + obj.robot_size+1))+1;
+                y = int32(j+cos(r)*(obj.robot_size + obj.robot_size+1))+1;
+                
+                collision = planner.checkCollision(obj.map.visibility_map, [x y], 1);
+                if ~collision
+                    obj.goal = [x, y];
+                end
+           end
+           draw(obj, obj.map);
+           path = planner.plan(obj.pose, obj.goal, obj.map.visibility_map);
            
         end
         

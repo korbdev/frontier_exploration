@@ -17,7 +17,7 @@ r = Robot(10, [240 240], map, 100);
 %path = planner.plan([240 240],[410 60], occupancy_map);
 
 %[m, n] = size(occupancy_map);
-path_ind = ones(m,n);
+%path_ind = ones(m,n);
 
 %path = r.moveTo([420 100]);
 
@@ -30,11 +30,11 @@ while true
        %occupancy_map(point(1), point(2)) = 4;
        r.pose = [point(1), point(2)];
        sense(r);
-       draw(r, map, cmap);
+       draw(r, map);
        pause(0.01);
        %drawTrajectory(r, map, cmap);
     end
-    draw(r, map, cmap);
+    draw(r, map);
     pause(0.001);
 end
 
