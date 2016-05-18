@@ -5,13 +5,13 @@ white = [1 1 1];
 red = [1 0 0];
 
 cmap = [black; grey; white; red];
-path = '~/research/frontier_exploration/map.bmp';
+path = '~/research/frontier_exploration/map_4.bmp';
 occupancy_map_pixel = imread(path);
 occupancy_map = rgb2ind(occupancy_map_pixel,cmap);
 
 map = Map(occupancy_map);
 
-r = Robot(10, [240 240], map, 100);
+r = Robot(3, [40 120], map, 50);
 
 %planner = Planner(r);
 %path = planner.plan([240 240],[410 60], occupancy_map);
@@ -21,21 +21,24 @@ r = Robot(10, [240 240], map, 100);
 
 %path = r.moveTo([420 100]);
 
+%sense(r);
+%draw(r, map);
+
 while true
     path = r.moveToFrontier();
     length = size(path,1);
+    draw(r, map);
     for i = length:-1:1
        point = path(i,:);
        
-       %occupancy_map(point(1), point(2)) = 4;
+       map.visibility_map(point(1), point(2)) = 4;
        r.pose = [point(1), point(2)];
        sense(r);
        draw(r, map);
-       pause(0.01);
+       pause(0.001);
        %drawTrajectory(r, map, cmap);
     end
     draw(r, map);
-    pause(0.001);
 end
 
 %{

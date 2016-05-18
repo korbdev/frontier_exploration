@@ -7,6 +7,7 @@ classdef Robot < handle
         map;
         sensor_range;
         trajectory;
+        collision_radius;
     end
     methods
         function obj = Robot(robot_size, initial_pose, map, sensor_range)
@@ -16,6 +17,7 @@ classdef Robot < handle
             obj.sensor_range = sensor_range;
             obj.goal = [];
             obj.frontier_point = [];
+            obj.collision_radius = 1;
         end
         
         function path = moveToFrontier(obj)
@@ -34,15 +36,21 @@ classdef Robot < handle
            obj.goal = [i j];
            obj.frontier_point = [i j];
            draw(obj, obj.map);
+
            %collision = planner.checkCollision(map, pose, obj.robot_size+1);
            for k = 0:360
                 r = ((2*pi)/360)*k;
-                x = int32(i+sin(r)*(obj.robot_size + obj.robot_size+1))+1;
-                y = int32(j+cos(r)*(obj.robot_size + obj.robot_size+1))+1;
+                x = floor(i+sin(r)*(2*obj.robot_size+obj.collision_radius));
+                y = floor(j+cos(r)*(2*obj.robot_size+obj.collision_radius));
                 
                 collision = planner.checkCollision(obj.map.visibility_map, [x y], 1);
                 if ~collision
                     obj.goal = [x, y];
+                    break;
+                end
+                if k == 360
+                    k = 0;
+                    obj.collision_radius = obj.collision_radius+1;
                 end
            end
            draw(obj, obj.map);
@@ -82,7 +90,7 @@ classdef Robot < handle
         
         function sense(obj)
            obj.map.update(obj.pose, obj.sensor_range);
-           obj.map.createFrontierMap(); 
+           obj.map.createFrontierMap(obj.pose); 
         end
     end
 end

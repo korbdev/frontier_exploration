@@ -3,6 +3,8 @@ classdef Map < handle
         occupancy_map;
         visibility_map;
         frontier_map;
+        frontier_polar;
+        frontier_polar_gauss;
     end
     methods
         function obj = Map(indeximage)
@@ -15,16 +17,47 @@ classdef Map < handle
             obj.frontier_map = zeros(size(obj.occupancy_map));
         end
         
-        function createFrontierMap(obj)
+        function createFrontierMap(obj, pose)
+            bins = 360;
+            angle_hist = zeros(bins,1);
+            obj.frontier_polar = [];
             obj.frontier_map = zeros(size(obj.occupancy_map));
+            
             [n, m] = size(obj.occupancy_map);
-            for j = 2:m-1
-                for i = 2:n-1
-                     if isFrontier(obj, j , i) == 1
-                       obj.frontier_map(j, i) = 2;
+            for i = 2:m-1
+                for j = 2:n-1
+                     if isFrontier(obj, i , j) == 1
+                       obj.frontier_map(i, j) = 2;
+                       angle = 0;
+                       x = i*cos(angle)+j*sin(angle);
+                       y = -i*sin(angle)+j*cos(angle);
+                       p = [x, y]-pose;
+                       r = norm(p);
+                       theta = 0;
+                       if(p(2) >= 0)
+                           theta = acos(p(1)/r);
+                           obj.frontier_polar = [obj.frontier_polar; theta];
+                       else
+                           theta = 2*pi - acos(p(1)/r);
+                           obj.frontier_polar = [obj.frontier_polar; theta];
+                       end
+                       deg = floor((theta/(2*pi))*360)+1;
+                       angle_hist(deg) = angle_hist(deg) + 1; %deg +1 => 1 based index
                      end
                 end
             end
+
+            sigma = 6.0;
+            obj.frontier_polar_gauss = gauss(angle_hist, 0, sigma);
+
+            theta_polarplot = zeros(bins, 1);
+            for i = 1:bins
+               theta_polarplot(i) = (i/360)*(2*pi);
+            end
+            
+            %figure(2)
+            subplot(2,2,4), polar(theta_polarplot, obj.frontier_polar_gauss), view([90 90]);
+            %set(gca,'View',[0 -90]);
         end
         
         function f = isFrontier(obj, x, y)
@@ -78,7 +111,7 @@ classdef Map < handle
             dx = x_end - x;
             dy = y_end - y;
             
-            %distance = sqrt(dx^2+dy^2);
+            distance = sqrt(dx^2+dy^2);
             
             x_step = 1;
             y_step = 1;
@@ -109,6 +142,8 @@ classdef Map < handle
                         else
                             obj.visibility_map(x,y) = 3;
                         end
+                    else
+                        break;
                     end
                     f = f + b;
                     if(f > 0)
@@ -116,6 +151,7 @@ classdef Map < handle
                         f = f - a;
                     end
                     x = x + x_step;
+                    %end %
                 end
             else
                 f = -dy;
@@ -131,6 +167,8 @@ classdef Map < handle
                         else
                             obj.visibility_map(x,y) = 3;
                         end
+                    else
+                        break;
                     end
                     f = f + a;
                     if(f > 0)
@@ -138,6 +176,7 @@ classdef Map < handle
                         f = f - b;
                     end
                     y = y + y_step;
+                    %end %
                 end
             end
             %obj.visibility_map(pose(1), pose(2)) = 4;

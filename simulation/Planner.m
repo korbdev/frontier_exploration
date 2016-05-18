@@ -83,8 +83,8 @@ classdef Planner < handle
             collision = 0;
             for i = 0:360
                 r = ((2*pi)/360)*i;
-                x = int32(pose(1)+sin(r)*(obj.robot.robot_size + buffer))+1;
-                y = int32(pose(2)+cos(r)*(obj.robot.robot_size + buffer))+1;
+                x = int32(pose(1)+sin(r)*(obj.robot.robot_size + buffer));
+                y = int32(pose(2)+cos(r)*(obj.robot.robot_size + buffer));
                 if(map(x, y) == 1 || map(x, y) == 2)
                     collision = 1;
                 end
