@@ -5,16 +5,17 @@ classdef Robot < handle
         goal;
         frontier_point;
         map;
-        sensor_range;
+        %sensor_range;
+        sensor
         trajectory;
         collision_radius;
     end
     methods
-        function obj = Robot(robot_size, initial_pose, map, sensor_range)
+        function obj = Robot(robot_size, initial_pose, sensor, map)
             obj.robot_size = robot_size;
             obj.pose = initial_pose;
             obj.map = map;
-            obj.sensor_range = sensor_range;
+            obj.sensor = sensor;
             obj.goal = [];
             obj.frontier_point = [];
             obj.collision_radius = 1;
@@ -26,7 +27,7 @@ classdef Robot < handle
            
            obj.sense();
            
-           idx = find(obj.map.frontier_map==2);
+           idx = find(obj.map.frontier_map==3);
            n = size(idx);
            %r = a + (b-a).*rand(N,1)
            random = floor(1 + (n-1).*rand(1));
@@ -89,7 +90,8 @@ classdef Robot < handle
         end
         
         function sense(obj)
-           obj.map.update(obj.pose, obj.sensor_range);
+           obj.map.visibility_map = obj.sensor.update(obj.pose, obj.map.visibility_map);
+           %obj.map.update(obj.pose, obj.sensor_range);
            obj.map.createFrontierMap(obj.pose); 
         end
     end

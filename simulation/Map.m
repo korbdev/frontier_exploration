@@ -1,33 +1,30 @@
 classdef Map < handle
     properties
-        occupancy_map;
+        %occupancy_map;
         visibility_map;
         frontier_map;
         frontier_polar;
         frontier_polar_gauss;
     end
     methods
-        function obj = Map(indeximage)
-            %Occupancy Map
-            obj.occupancy_map = indeximage;
+        function obj = Map(m, n)
             %Explored Map
-            obj.visibility_map = ones(size(obj.occupancy_map));
-            obj.visibility_map = obj.visibility_map*2;
+            obj.visibility_map = ones(m, n)*2; %initialize territory as unknown
             %Frontier Map 
-            obj.frontier_map = zeros(size(obj.occupancy_map));
+            obj.frontier_map = zeros(m, n);
         end
         
         function createFrontierMap(obj, pose)
             bins = 360;
             angle_hist = zeros(bins,1);
             obj.frontier_polar = [];
-            obj.frontier_map = zeros(size(obj.occupancy_map));
+            obj.frontier_map = zeros(size(obj.visibility_map));
             
-            [n, m] = size(obj.occupancy_map);
+            [n, m] = size(obj.visibility_map);
             for i = 2:m-1
                 for j = 2:n-1
                      if isFrontier(obj, i , j) == 1
-                       obj.frontier_map(i, j) = 2;
+                       obj.frontier_map(i, j) = 3;
 
                        p = transformCoordinatesToRobot(obj, [i j], pose);
                        [theta, radius] = transformCartesianToPolar(obj, p);
@@ -84,7 +81,7 @@ classdef Map < handle
                end
             end
         end
-        
+        %{
         function update(obj, pose, radius)
            [n, m] = size(obj.occupancy_map);
            
@@ -188,5 +185,6 @@ classdef Map < handle
             end
             %obj.visibility_map(pose(1), pose(2)) = 4;
         end
+        %}
     end
 end
