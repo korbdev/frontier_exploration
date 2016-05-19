@@ -5,7 +5,7 @@ white = [1 1 1];
 red = [1 0 0];
 
 cmap = [black; grey; white; red];
-path = '~/research/frontier_exploration/map_4.bmp';
+path = '~/research/frontier_exploration/map_5.bmp';
 occupancy_map_pixel = imread(path);
 occupancy_map = rgb2ind(occupancy_map_pixel,cmap);
 

@@ -28,19 +28,11 @@ classdef Map < handle
                 for j = 2:n-1
                      if isFrontier(obj, i , j) == 1
                        obj.frontier_map(i, j) = 2;
-                       angle = 0;
-                       x = i*cos(angle)+j*sin(angle);
-                       y = -i*sin(angle)+j*cos(angle);
-                       p = [x, y]-pose;
-                       r = norm(p);
-                       theta = 0;
-                       if(p(2) >= 0)
-                           theta = acos(p(1)/r);
-                           obj.frontier_polar = [obj.frontier_polar; theta];
-                       else
-                           theta = 2*pi - acos(p(1)/r);
-                           obj.frontier_polar = [obj.frontier_polar; theta];
-                       end
+
+                       p = transformCoordinatesToRobot(obj, [i j], pose);
+                       [theta, radius] = transformCartesianToPolar(obj, p);
+                       obj.frontier_polar = [obj.frontier_polar; theta];
+                       
                        deg = floor((theta/(2*pi))*360)+1;
                        angle_hist(deg) = angle_hist(deg) + 1; %deg +1 => 1 based index
                      end
@@ -55,9 +47,24 @@ classdef Map < handle
                theta_polarplot(i) = (i/360)*(2*pi);
             end
             
-            %figure(2)
             subplot(2,2,4), polar(theta_polarplot, obj.frontier_polar_gauss), view([90 90]);
-            %set(gca,'View',[0 -90]);
+        end
+        
+        function p = transformCoordinatesToRobot(obj, point_to_transform, parent)
+            angle = 0;
+            x = point_to_transform(1)*cos(angle)+point_to_transform(2)*sin(angle);
+            y = -point_to_transform(1)*sin(angle)+point_to_transform(2)*cos(angle);
+            p = [x, y]-parent;
+        end
+        
+        function [theta, radius] = transformCartesianToPolar(obj, p)
+            radius = norm(p);
+            theta = 0;
+            if(p(2) >= 0)
+                theta = acos(p(1)/radius);
+            else
+                theta = 2*pi - acos(p(1)/radius);
+            end
         end
         
         function f = isFrontier(obj, x, y)
