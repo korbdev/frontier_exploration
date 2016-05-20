@@ -16,7 +16,7 @@ classdef Sensor < handle
         end
         
         function map =  update(obj, pose, map)
-            [n, m] = size(obj.occupancy_map);
+            [m, n] = size(obj.occupancy_map);
             
             for j = 1:m
                 i = n;

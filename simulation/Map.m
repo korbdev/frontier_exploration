@@ -20,48 +20,75 @@ classdef Map < handle
             obj.frontier_polar = [];
             obj.frontier_map = zeros(size(obj.visibility_map));
             
-            [n, m] = size(obj.visibility_map);
+            black = [0 0 0];
+            grey = [0.5 0.5 0.5];
+            white = [1 1 1];
+            red = [1 0 0];
+            green = [0 1 0];
+            blue = [0 0 1];
+
+            cmap = [black; grey; white; red; green; blue];
+            
+            [m, n] = size(obj.visibility_map);
             for i = 2:m-1
                 for j = 2:n-1
                      if isFrontier(obj, i , j) == 1
                        obj.frontier_map(i, j) = 3;
-
-                       p = transformCoordinatesToRobot(obj, [i j], pose);
-                       [theta, radius] = transformCartesianToPolar(obj, p);
+                       i, j
+                       p = transformCoordinatesToRobot(obj, [i j], pose)
+                       [theta, radius] = transformCartesianToPolar(obj, p)
                        obj.frontier_polar = [obj.frontier_polar; theta];
                        
-                       deg = floor((theta/(2*pi))*360)+1;
+                       %obj.visibility_map(pose(1), pose(2)) = 4;
+                       %obj.visibility_map(i, j) = 6;
+                       %rgb_img = ind2rgb(obj.visibility_map, cmap);
+                       %figure(2)
+                       %imshow(rgb_img)
+                       %pause(0.01);
+                       
+                       %obj.visibility_map(i, j) = 5;
+                       
+                       deg = floor((theta/(2*pi))*360)+1
                        angle_hist(deg) = angle_hist(deg) + 1; %deg +1 => 1 based index
                      end
                 end
             end
 
-            sigma = 6.0;
-            obj.frontier_polar_gauss = gauss(angle_hist, 0, sigma);
+            sigma = 3.0;
+            normalized_hist = normalize(obj, angle_hist);
+            obj.frontier_polar_gauss = gauss(normalized_hist, 0, sigma);
 
             theta_polarplot = zeros(bins, 1);
             for i = 1:bins
                theta_polarplot(i) = (i/360)*(2*pi);
             end
             
-            subplot(2,2,4), polar(theta_polarplot, obj.frontier_polar_gauss), view([90 90]);
+            subplot(2,2,4), polar(theta_polarplot, obj.frontier_polar_gauss), view([0 -90]);
+            %subplot(3,3,5), scatter([1:360], normalized_hist);
         end
         
         function p = transformCoordinatesToRobot(obj, point_to_transform, parent)
             angle = 0;
-            x = point_to_transform(1)*cos(angle)+point_to_transform(2)*sin(angle);
-            y = -point_to_transform(1)*sin(angle)+point_to_transform(2)*cos(angle);
-            p = [x, y]-parent;
+            x = point_to_transform(2)*cos(angle)+point_to_transform(1)*sin(angle);
+            y = -point_to_transform(2)*sin(angle)+point_to_transform(1)*cos(angle);
+            p = [y, x]-parent;
         end
         
         function [theta, radius] = transformCartesianToPolar(obj, p)
-            radius = norm(p);
+            p
+            radius = norm(p)
             theta = 0;
-            if(p(2) >= 0)
-                theta = acos(p(1)/radius);
+            if(p(1) >= 0)
+                theta = acos(p(2)/radius);
             else
-                theta = 2*pi - acos(p(1)/radius);
+                theta = 2*pi - acos(p(2)/radius);
             end
+        end
+        
+        function X_n = normalize(obj, X)
+            X_min = min(X);
+            X_max = max(X);
+            X_n = (X- X_min)/(X_max - X_min);
         end
         
         function f = isFrontier(obj, x, y)

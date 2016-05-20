@@ -12,8 +12,10 @@ function draw(robot, map)
     grey = [0.5 0.5 0.5];
     white = [1 1 1];
     red = [1 0 0];
+    green = [0 1 0];
+    blue = [0 0 1];
 
-    color_map = [black; grey; white; red];
+    color_map = [black; grey; white; red; green; blue];
     
     map.visibility_map(robot.pose(1), robot.pose(2)) = 4;
     
@@ -40,7 +42,7 @@ function draw(robot, map)
     subplot(2,2,1), imshow(new_image)
     subplot(2,2,2), imshow(frontier_img);
     [tout, rout] = rose(map.frontier_polar, 360);
-    subplot(2,2,3), polar(tout, rout), set(gca,'View',[90 90]);
+    subplot(2,2,3), polar(tout, rout), set(gca,'View',[0 -90]);
             %set(gca,'View',[90 90]);
     %subplot(1,1,1), imshow(rgb_img)
 end

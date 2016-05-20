@@ -15,8 +15,9 @@ occupancy_map = rgb2ind(occupancy_map_pixel,cmap);
 sensor = Sensor(occupancy_map, 50);
 map = Map(m, n);
 
-r = Robot(3, [40 120], sensor, map);
-
+r = Robot(3, [20 120], sensor, map);
+r.explore();
+%{
 while true
     path = r.moveToFrontier();
     length = size(path,1);
@@ -32,3 +33,4 @@ while true
     end
     draw(r, map);
 end
+%}

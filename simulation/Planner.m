@@ -58,11 +58,15 @@ classdef Planner < handle
             end
 
             position = goal
+            obj.robot.map.visibility_map(goal(1), goal(2)) = 6;
+            draw(obj.robot, obj.robot.map);
+            pause(0.001);
+            
             %%while(position(1) ~= start(1) && position(2) ~= start(2))
             while(~isequal(start, position))
                 index = parent(position(1), position(2));
-                i = floor(index / m);
-                j = mod(index, m);
+                i = floor(index / n);
+                j = mod(index, n);
                 path = [path; i j];
                 position = [i j];
             end
@@ -83,11 +87,14 @@ classdef Planner < handle
             collision = 0;
             for i = 0:360
                 r = ((2*pi)/360)*i;
-                x = int32(pose(1)+sin(r)*(obj.robot.robot_size + buffer));
-                y = int32(pose(2)+cos(r)*(obj.robot.robot_size + buffer));
+                x = floor(pose(1)+cos(r)*(obj.robot.robot_size + buffer))+1;
+                y = floor(pose(2)+sin(r)*(obj.robot.robot_size + buffer))+1;
                 if(map(x, y) == 1 || map(x, y) == 2)
                     collision = 1;
                 end
+                %obj.robot.map.visibility_map(x, y) = 4;
+                %draw(obj.robot, obj.robot.map);
+                %pause(0.001);
             end
         end
     end

@@ -1,0 +1,3 @@
+classdef Frontiermap < handle
+    
+end
