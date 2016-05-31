@@ -10,12 +10,12 @@ classdef Planner < handle
         function obj = Planner(robot)
             obj.robot = robot;
         end
-        function path = plan(obj, start, goal, map)
+        function path = plan(obj, start, goal, map, buffer, test_collision, unknown)
             path = [];
             [m,n] = size(map);
             parent = ones(m,n);
             open_set = Inf(m,n);
-            closed_set = Inf(m,n);;
+            closed_set = Inf(m,n);
             %f_score = zeros(m,n);
             g_score = zeros(m,n);
             
@@ -27,7 +27,7 @@ classdef Planner < handle
                 open_set(i, j) = Inf;
                 closed_set(i,j) = 1;
                 if [i,j] == goal
-                   break; 
+                    break;
                 end
                 for k = -1:1
                     for l = -1:1
@@ -36,7 +36,11 @@ classdef Planner < handle
                                 cost = g_score(i,j)+1;
                                 n_i = i+k;
                                 n_j = j+l;
-                                if(obj.isFeasibleTerrain(map(n_i, n_j)) && ~obj.checkCollision(map, [n_i n_j],1))
+                                collision = 0;
+                                if test_collision == 1
+                                    collision = obj.checkCollision(map, [n_i n_j],buffer);
+                                end
+                                if obj.isFeasibleTerrain(map(n_i, n_j), unknown) && ~collision % && ~obj.checkCollision(map, [n_i n_j],buffer))
                                     if ~isinf(open_set(n_i, n_j)) && cost < g_score(n_i, n_j)
                                         open_set(n_i, n_j) = Inf;
                                     end
@@ -50,32 +54,43 @@ classdef Planner < handle
                                         parent(n_i, n_j) = i * n +j;
                                     end
                                 end
-                                
                             end
                         end
                     end
                 end
             end
-
+            
             position = goal
-            obj.robot.map.visibility_map(goal(1), goal(2)) = 6;
-            draw(obj.robot, obj.robot.map);
-            pause(0.001);
+            %obj.robot.map.visibility_map(goal(1), goal(2)) = 6;
+            %draw(obj.robot, obj.robot.map);
+            %pause(0.001);
             
             %%while(position(1) ~= start(1) && position(2) ~= start(2))
-            while(~isequal(start, position))
-                index = parent(position(1), position(2));
-                i = floor(index / n);
-                j = mod(index, n);
-                path = [path; i j];
-                position = [i j];
-            end
+                while(~isequal(start, position))
+                    position(1)
+                    position(2)
+                    index = parent(position(1), position(2))
+                    if index == 1
+                       break;
+                    end
+                    i = floor(index / n);
+                    j = mod(index, n);
+                    path = [path; i j];
+                    position = [i j];
+                end
+            
         end
-        function feasible = isFeasibleTerrain(obj, terrain)
+        function feasible = isFeasibleTerrain(obj, terrain, throughUnknownTerrain)
             feasible = 1;
             %if terrain == 0 || terrain == 1
-            if terrain == 1 || terrain == 2
-                feasible = 0;
+            if throughUnknownTerrain == 0
+                if terrain == 1 || terrain == 2
+                    feasible = 0;
+                end
+            else
+                if terrain == 1
+                    feasible = 0;
+                end
             end
         end
         function cost = heuristic(obj, start, goal)
@@ -87,8 +102,10 @@ classdef Planner < handle
             collision = 0;
             for i = 0:360
                 r = ((2*pi)/360)*i;
-                x = floor(pose(1)+cos(r)*(obj.robot.robot_size + buffer))+1;
-                y = floor(pose(2)+sin(r)*(obj.robot.robot_size + buffer))+1;
+                x = floor(pose(1)+cos(r)*(buffer));
+                y = floor(pose(2)+sin(r)*(buffer));
+                %x = floor(pose(1)+cos(r)*(obj.robot.robot_size + buffer))+1;
+                %y = floor(pose(2)+sin(r)*(obj.robot.robot_size + buffer))+1;
                 if(map(x, y) == 1 || map(x, y) == 2)
                     collision = 1;
                 end

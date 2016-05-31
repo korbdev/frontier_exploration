@@ -6,31 +6,26 @@ red = [1 0 0];
 green = [0 1 0];
 blue = [0 0 1];
 
-cmap = [black; grey; white; red; green; blue];
+global color_map;
+color_map = [black; grey; white; red; green; blue];
+
+global log;
+log = fopen('~/research/frontier_exploration/simulation/log.txt', 'wt');
+
+sigma = 1;
+omega = 0.65;
+theta = 0.35;
+t_h = 0.05;
+
+fprintf(log, 'sigma %d, omega %d, theta %d, t_h %d\n', sigma, omega, theta, t_h);
+
 path = '~/research/frontier_exploration/map_4.bmp';
 occupancy_map_pixel = imread(path);
-occupancy_map = rgb2ind(occupancy_map_pixel,cmap);
+occupancy_map = rgb2ind(occupancy_map_pixel,color_map);
 
 [m, n] = size(occupancy_map);
-sensor = Sensor(occupancy_map, 50);
+sensor = Sensor(occupancy_map,80);
 map = Map(m, n);
 
-r = Robot(3, [20 120], sensor, map);
-r.explore();
-%{
-while true
-    path = r.moveToFrontier();
-    length = size(path,1);
-    draw(r, map);
-    for i = length:-1:1
-       point = path(i,:);
-       
-       map.visibility_map(point(1), point(2)) = 4;
-       r.pose = [point(1), point(2)];
-       r.sense();
-       draw(r, map);
-       pause(0.01);
-    end
-    draw(r, map);
-end
-%}
+r = Robot(1, [32 120], sensor, map);
+r.explore(sigma, omega, theta, t_h);

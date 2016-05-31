@@ -1,48 +1,26 @@
 function draw(robot, map)
-    %map.visibility_map(robot.pose(1), robot.pose(2)) = 4;
-    
-    %rgb_img = ind2rgb(map.visibility_map, color_map);
-    %shapeInserter = vision.ShapeInserter('Shape','Circles');
-    
-    %circle = int32([robot.pose(2) robot.pose(1) robot.robot_size]);
-    %new_image = step(shapeInserter, rgb_img, circle);
-
-    %colors
-    black = [0 0 0];
-    grey = [0.5 0.5 0.5];
-    white = [1 1 1];
-    red = [1 0 0];
-    green = [0 1 0];
-    blue = [0 0 1];
-
-    color_map = [black; grey; white; red; green; blue];
-    
-    map.visibility_map(robot.pose(1), robot.pose(2)) = 4;
-    
-    if(robot.goal)
-        map.visibility_map(robot.goal(1), robot.goal(2)) = 4;
-    end
-    
-    if(robot.frontier_point)
-        map.visibility_map(robot.frontier_point(1), robot.frontier_point(2)) = 4;
-    end
+    global color_map;
     
     rgb_img = ind2rgb(map.visibility_map, color_map);
-    shapeInserter = vision.ShapeInserter('Shape','Circles');
 
-    circle = int32([robot.pose(2) robot.pose(1) robot.robot_size; robot.goal(2) robot.goal(1) robot.robot_size; robot.frontier_point(2) robot.frontier_point(1) robot.robot_size*2+robot.collision_radius]);
-    new_image = step(shapeInserter, rgb_img, circle);
-    %subimage(new_image)
+    image = map.visibility_map;
+    h = figure(1);
     
-    frontier_img = ind2rgb(map.frontier_map, color_map);
-    %figure(1);
-    %subimage(frontier_img)
+    subplot(2,3,1);
     
-    figure(1)
-    subplot(2,2,1), imshow(new_image)
-    subplot(2,2,2), imshow(frontier_img);
-    [tout, rout] = rose(map.frontier_polar, 360);
-    subplot(2,2,3), polar(tout, rout), set(gca,'View',[0 -90]);
-            %set(gca,'View',[90 90]);
-    %subplot(1,1,1), imshow(rgb_img)
+    image = robot.drawRobot(h, image);
+    rgb_img = ind2rgb(image, color_map);
+    imshow(rgb_img);
+
+    subplot(2,3,2)
+    map_img = ind2rgb(map.visibility_map, color_map);
+    imshow(map_img);
+    
+    subplot(2,3,3)%, imshow(frontier_img);
+    map.frontier_map.draw(h);
+    
+    if ~isempty(map.frontier_map.theta_list)
+        [tout, rout] = rose(map.frontier_map.theta_list, map.frontier_map.bins);
+        subplot(2,3,4), polar(tout, rout), set(gca,'View',[0 -90]);
+    end
 end
