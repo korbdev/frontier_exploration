@@ -5,7 +5,6 @@ classdef Robot < handle
         goal;
         frontier_point;
         map;
-        %sensor_range;
         sensor
         trajectory;
         collision_radius;
@@ -46,9 +45,7 @@ classdef Robot < handle
                         r = ((2*pi)/360)*k;
                         y = floor(frontier(2)+sin(r)*(2*obj.robot_size+obj.collision_radius));
                         x = floor(frontier(1)+cos(r)*(2*obj.robot_size+obj.collision_radius));
-                        %obj.map.visibility_map(x, y) = 5;
-                        %draw(obj, obj.map);
-                        %pause(0.001);
+
                         collision = planner.checkCollision(obj.map.visibility_map, [x y], obj.robot_size+2);
                         distance = norm([x y] - obj.pose);
                         if ~collision && distance > 1.5
@@ -76,8 +73,6 @@ classdef Robot < handle
                 
                 for i = length:-1:1
                     point = path(i,:);
-                    
-                    %obj.map.visibility_map(point(1), point(2)) = 4;
                     obj.pose = [point(1), point(2)];
                     obj.complete_path(point(1), point(2)) = 3;
                     obj.sense();
@@ -85,27 +80,10 @@ classdef Robot < handle
                     pause(0.01);
                 end
                 
-                %{
-                path = r.moveToFrontier();
-                length = size(path,1);
-                draw(r, map);
-                for i = length:-1:1
-                    point = path(i,:);
-                    
-                    map.visibility_map(point(1), point(2)) = 4;
-                    r.pose = [point(1), point(2)];
-                    r.sense();
-                    draw(r, map);
-                    pause(0.01);
-                end
-                draw(r, map);
-                %}
                 obj.sense();
                 obj.map.frontier_map.createFrontierMap(obj.pose, sigma, t_h);
                 frontier = explorer.getFrontier();
-                %if isempty(frontier)
-                %   return; 
-                %end
+
                 pause(0.01);
             
             end

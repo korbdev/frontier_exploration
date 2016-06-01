@@ -60,16 +60,14 @@ classdef Planner < handle
                 end
             end
             
-            position = goal
+            position = goal;
             %obj.robot.map.visibility_map(goal(1), goal(2)) = 6;
             %draw(obj.robot, obj.robot.map);
             %pause(0.001);
             
             %%while(position(1) ~= start(1) && position(2) ~= start(2))
                 while(~isequal(start, position))
-                    position(1)
-                    position(2)
-                    index = parent(position(1), position(2))
+                    index = parent(position(1), position(2));
                     if index == 1
                        break;
                     end

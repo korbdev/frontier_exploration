@@ -10,9 +10,7 @@ classdef Explorer < handle
         function obj = Explorer(robot, omega, theta)
             obj.robot = robot;
             obj.clusters = [];
-            %obj.omega = 0.8; % alternating
-            %obj.theta = 0.0; %alternating
-            %obj.t_h = 0.001; %alternating
+
             obj.omega = omega;
             obj.theta = theta;
         end
@@ -97,7 +95,7 @@ classdef Explorer < handle
                     d = 0
                 else
                     %d = 1 - obj.omega * distances_norm(i);
-                    d = obj.omega * (1/distances(i));
+                    d = obj.omega * (1/distances_norm(i));
                     
                 end
                 if(cardinality_norm(i) == 0)
@@ -121,7 +119,7 @@ classdef Explorer < handle
             end
             
             frontier_goal = obj.clusters(I).cluster_goal;
-            
+            obj.robot.map.visibility_map(frontier_goal(1),frontier_goal(2))
             if obj.robot.map.visibility_map(obj.clusters(I).cluster_goal(1),obj.clusters(I).cluster_goal(2)) == 2
                 euclidian_distance = [];
                 for c = 1:size(obj.clusters(I).points_i, 1)
@@ -133,6 +131,7 @@ classdef Explorer < handle
                 %obj.robot.map.visibility_map(floor(k), floor(l)) = 4;
                 frontier_goal = obj.clusters(I).cluster_goal;
             end
+            %obj.robot.map.visibility_map(cluster_i.cluster_goal(1), cluster_i.cluster_goal(2)) = 4;
             fprintf(log, 'Cluster Index %d, Goal: [%d,%d]\n', I, frontier_goal(1), frontier_goal(2));
             frontier = [frontier_goal(1) frontier_goal(2)];
             obj.robot.goal = frontier;
