@@ -16,8 +16,8 @@
 
 d_c = [80 100; 40 40; 10 25];
 
-omega = 0.1;
-theta = 0.1;
+omega = 0.5;
+theta = 0.5;
 
 d_c_perm = perms(d_c);
 
@@ -47,9 +47,8 @@ figure(1)
 subplot(2, 3, 1)
 [X,Y] = meshgrid(0:0.07:1, 0:0.1:1);
 %Z = X .* exp(-X.^2 - Y.^2);
-%Z = omega*(1./X)+theta*Y;
-%Z = (1-omega*X)+theta*Y;
-Z = exp(1./X).*exp(Y);
+Z = omega*(1./X)+theta*Y;
+%Z = (1-omega*X)+theta*Y;;
 surf(X,Y,Z)
 
 title('f(d,c)');

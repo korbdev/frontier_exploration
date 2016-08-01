@@ -1,6 +1,7 @@
 classdef Sensor < handle
     properties
         occupancy_map;
+        num_free_pixels;
         radius;
         wall;
         unknown;
@@ -13,6 +14,7 @@ classdef Sensor < handle
             obj.wall = 1;
             obj.unknown = 2;
             obj.free = 3;
+            obj.num_free_pixels = sum(sum(obj.occupancy_map == 3));
         end
         
         function map =  update(obj, pose, map)
@@ -37,6 +39,71 @@ classdef Sensor < handle
                 j = 1;
                 map = updateView(obj, pose, [j i], map);
             end
+            
+            free_territory = 0;
+            occupied_territory = 0;
+            n_wall = 0;
+            n_free = 0;
+            n_wall_wall = 0;
+            n_wall_free = 0;
+            n_free_wall = 0;
+            n_free_free = 0;
+            sum = 0;
+            for i = 2:m-1
+                for j = 2:n-1
+                    f = 0;
+                    if map(i, j) == obj.wall || map(i, j) == obj.free
+                        if map(i-1, j) == obj.wall
+                            f = 1;
+                        end
+                        if map(i+1, j) == obj.wall
+                            f = 1;
+                        end
+                        if map(i, j+1) == obj.wall
+                            f = 1;
+                        end
+                        if map(i, j-1) == obj.wall
+                            f = 1;
+                        end
+                        if f==1
+                            n_wall = n_wall +1;
+                        else
+                            n_free = n_free +1;
+                        end
+                        sum = sum+1;
+                    end
+                    if map(i, j) == obj.wall
+                        %sum = sum +1;
+                        occupied_territory = occupied_territory +1;
+                        if f == 1
+                            n_wall_wall = n_wall_wall +1;
+                        else
+                            n_wall_free = n_wall_free +1;
+                        end
+                    elseif map(i, j) == obj.free
+                        if f == 1
+                            n_free_wall = n_free_wall +1;
+                        else
+                            n_free_free = n_free_free +1;
+                        end
+                        %sum = sum+1;
+                        free_territory = free_territory+1;
+                    end
+                end
+            end
+            
+            %free_territory, occupied_territory, n_free, n_wall, n_wall_free, n_wall_wall, n_free_free, n_free_free;
+            p_free = free_territory/sum;
+            p_n_free = n_free/sum;
+            p_wall = occupied_territory/sum;
+            p_n_wall = n_wall/sum;
+            p_n_w_w = n_wall_wall/sum;
+            p_n_f = n_free/sum;
+            p_n_f_f = n_free_free/sum;
+            p_n_f_w = n_free_wall/sum;
+            
+            p_f_n_f = (p_free*p_n_f_f)/p_n_f;
+            
         end
         
         function map = updateView(obj, pose, pose_to, map)
@@ -48,7 +115,7 @@ classdef Sensor < handle
             dx = x_end - x;
             dy = y_end - y;
             
-            distance = sqrt(dx^2+dy^2);
+            distance = sqrt(double(dx)^2+double(dy)^2);
             
             x_step = 1;
             y_step = 1;
@@ -71,7 +138,7 @@ classdef Sensor < handle
                 while x ~= x_end
                     new_dx = x - pose(1);
                     new_dy = y - pose(2);
-                    distance = sqrt(new_dx^2+new_dy^2);
+                    distance = sqrt(double(new_dx)^2+double(new_dy)^2);
                     if(distance < obj.radius)
                         if(obj.occupancy_map(x,y) == obj.wall)
                             map(x,y) = obj.wall;
@@ -95,7 +162,7 @@ classdef Sensor < handle
                 while y ~= y_end
                     new_dx = x - pose(1);
                     new_dy = y - pose(2);
-                    distance = sqrt(new_dx^2+new_dy^2);
+                    distance = sqrt(double(new_dx)^2+double(new_dy)^2);
                     if(distance < obj.radius)
                         %break;
                         if(obj.occupancy_map(x,y) == obj.wall)
