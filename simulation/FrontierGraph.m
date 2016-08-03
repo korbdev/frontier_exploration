@@ -67,19 +67,19 @@ classdef FrontierGraph < handle
             drawArrow = @(x,y,varargin) quiver( x(1),y(1),x(2)-x(1),y(2)-y(1),0, varargin{:} );
             clims = [0 500];
             [m, n] = size(obj.weights);
-            bneck = zeros(240);
+            %bneck = zeros(240);
             for i = 1:m-1
                 from = frontiers(i);
                 %from_outer = obj.map.frontier_map.outer_frontiers(i);
                 
-                planner_kspace = PathPlanner(obj.map.visibility_map, 240, 240, 4, true);
+                planner_kspace = PathPlanner(obj.map.visibility_map, 240, 240, 2, true);
                 r_map_kspace = planner_kspace.planCostMap(from.center(1), from.center(2), false);
                 
-                subplot(2,4,3);
-                bneck = bneck + planner_kspace.computeBottleNeckMap();
-                imagesc(bneck);
+                %subplot(2,4,3);
+                %bneck = bneck + planner_kspace.computeBottleNeckMap();
+                %imagesc(bneck);
                 
-                planner_uspace = PathPlanner(obj.map.visibility_map, 240, 240, 4, true);
+                planner_uspace = PathPlanner(obj.map.visibility_map, 240, 240, 2, true);
                 r_map_uspace = planner_uspace.planCostMap(from.center(1), from.center(2), true);
 
                 subplot(2, 4, 5);

@@ -33,11 +33,11 @@ occupancy_map_pixel = imread(path);
 occupancy_map = rgb2ind(occupancy_map_pixel,color_map);
 
 [m, n] = size(occupancy_map);
-sensor = Sensor(occupancy_map,45);
+sensor = Sensor(occupancy_map,35);
 map = Map(m, n);
 
 %r = Robot(2, [20 80], sensor, map);
-r = Robot(4, [20 20], sensor, map);
+r = Robot(2, [210 210], sensor, map);
 %r.explore(sigma, omega, theta, t_h);
 %r.exploreUspace();
 r.exploreCloseFrontiers();

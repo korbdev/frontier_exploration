@@ -55,8 +55,11 @@ classdef Robot < handle
             num_frontiers = size(obj.map.frontier_map.frontiers,1);
             
             journey_sum = 0;
+            
+            old_segment = 0;
+            current_segment = 0;
+            old_pose = obj.pose;
             while num_frontiers > 0
-                draw(obj, obj.map);
                 calc_counter = calc_counter +1;
                
                 sm = planner.safety_map;
@@ -66,14 +69,26 @@ classdef Robot < handle
                 subplot(2, 4, 3);
                 imagesc(r_map);
                 
+                grey_map = sm == 2;
+                temp_sm = sm;
+                temp_sm(grey_map) = 0;
                 %perform segmentation
-                current = ind2rgb(obj.map.visibility_map, color_map);
+                current = ind2rgb(temp_sm, color_map);
 
-                BW = im2bw(current,0.5);
+                %BW = im2bw(current,0.5);
 
-                im = -bwdist(~BW, 'chessboard');
+                %im = -bwdist(BW, 'euclidean');
 
-                wim = watershed(im, 8);
+                %mask = imextendedmin(im,2);
+                
+                %D2 = imimposemin(im ,mask);
+                im = imgaussfilt(imcomplement(current), 4);
+                wim = watershed(im,8);
+                
+                %wim = watershed(im, 8);
+                
+                
+                %imshowpair(bw,mask,'blend')
                 
                 segmented = zeros(240);
                 segments = Segment.empty;
@@ -98,18 +113,30 @@ classdef Robot < handle
                     end
                 end
                 
+                current_segment = segmented(obj.pose(1), obj.pose(2));
+                old_segment = segmented(old_pose(1), old_pose(2));
                 %corners = detectHarrisFeatures(BW);
                 %[features, valid_corners] = extractFeatures(BW, corners);
 
-                %subplot(2,4,3);
-                %imagesc(BW); hold on;
+                subplot(2,4,3);
+                imagesc(im);
+                %hold on;
                 %plot(valid_corners);
                 %hold off;
 
                 subplot(2,4,4);
                 bneck = planner.computeBottleNeckMap();
-                imagesc(bneck);
-                
+                %imagesc(bneck);
+                imagesc(segmented);
+                 % Make a truecolor all-green image.
+                green = cat(3, zeros(size(bneck)), ones(size(bneck)), zeros(size(bneck)));
+                hold on 
+                h = imshow(green); 
+                hold off
+                 
+                alphamap = bneck < 100;
+                bneck(alphamap) = 0;
+                set(h, 'AlphaData', bneck)
                 %subplot(2,4,4);
                 %imagesc(segmented);
                 
@@ -181,7 +208,6 @@ classdef Robot < handle
                 %if obj.sensor.radius-obj.robot_size < avg_journey
                     %journey_sum = 0;
                     %calc_counter = 0;
-                    fprintf('stop');
                     
                     dp_temp = dp <= 0;
                     test_vector = ones(1, size(FG.weights, 2));
@@ -198,7 +224,9 @@ classdef Robot < handle
                 
                 frontier = obj.map.frontier_map.frontiers(min_dist_frontier_idx);
                 
-                %{
+                %if old_segment ~= current_segment
+                    %search = old_segment
+                
                 min_dist = Inf;
                 for i=1:size(frontiers,1)
                     points = frontiers(i).points;
@@ -206,7 +234,7 @@ classdef Robot < handle
                         p = points(j,:);
                         segment_robot = segmented(obj.pose(1), obj.pose(2));
                         segment_frontier = segmented(p(1), p(2));
-                        if segment_robot == segment_frontier
+                        if old_segment == segment_frontier
                             %frontier = frontiers(i);
                             dist = paths_length(i);
                             if dist < min_dist
@@ -216,8 +244,8 @@ classdef Robot < handle
                         end
                     end
                 end
-                %}
                 
+                %{
                 img_size = obj.sensor.radius*2;
                 f_img = zeros(img_size);
                 f_c = zeros(img_size);
@@ -240,6 +268,7 @@ classdef Robot < handle
                         end
                     end
                 end
+                %}
                 
                 %{
                 subplot(2, 4, 3);    
@@ -282,6 +311,10 @@ classdef Robot < handle
                 
                 path = planner.generatePath(frontier.center(1), frontier.center(2));   
                 
+                if min_dist == Inf || current_segment == old_segment
+                    old_pose = obj.pose;
+                end
+                
                 for i = size(path,1):-1:1
                     point = path(i,:);
                     total_path_length = total_path_length + 1;
@@ -292,7 +325,9 @@ classdef Robot < handle
                     %pause(0.001);
                 end
                 
-                %draw(obj, obj.map);
+                %old_segment = current_segment
+                %current_segment = segmented(obj.pose(1), obj.pose(2));
+                
                 planner.map = obj.map.visibility_map;
                 r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
                 sm = planner.safety_map;
@@ -327,6 +362,7 @@ classdef Robot < handle
                 obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, sm);
                 
                 num_frontiers = size(obj.map.frontier_map.frontiers,1);
+                draw(obj, obj.map);
                 pause(0.01);
             end
         end

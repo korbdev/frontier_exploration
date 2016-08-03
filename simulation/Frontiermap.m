@@ -49,30 +49,30 @@ classdef Frontiermap < handle
             for i = 2:m-1
                 for j = 2:n-1
                     if isFrontier(obj, i , j, sm) == 1
-                        p = transformCoordinatesToRobot([i j], pose);
-                        [theta, radius] = transformCartesianToPolar(p);
-                        deg = floor((theta/(2*pi))*360)+1;
+%                        p = transformCoordinatesToRobot([i j], pose);
+%                        [theta, radius] = transformCartesianToPolar(p);
+%                        deg = floor((theta/(2*pi))*360)+1;
                         
-                        obj.incrementHistogramAt(deg);
-                        obj.setFrontier(i,j,deg, theta, radius);
+%                        obj.incrementHistogramAt(deg);
+                        obj.setFrontier(i,j,0, 0, 0);
                     end
                 end
             end
             
             %normalized_hist = normalize(obj.angle_histogram);
             
-            normalized_hist = obj.angle_histogram/(max(obj.angle_histogram));
+%            normalized_hist = obj.angle_histogram/(max(obj.angle_histogram));
             
-            t_h_idx = find(normalized_hist < t_h);
-            obj.angle_histogram_normalized_filtered = normalized_hist;
-            obj.angle_histogram_normalized_filtered(t_h_idx) = 0;
+%            t_h_idx = find(normalized_hist < t_h);
+%            obj.angle_histogram_normalized_filtered = normalized_hist;
+%            obj.angle_histogram_normalized_filtered(t_h_idx) = 0;
             
-            obj.angle_histogram_gauss = gauss(obj.angle_histogram_normalized_filtered, 0, sigma);
+%            obj.angle_histogram_gauss = gauss(obj.angle_histogram_normalized_filtered, 0, sigma);
             
-            theta_polarplot = zeros(obj.bins, 1);
-            for i = 1:obj.bins
-                theta_polarplot(i) = (i/360)*(2*pi);
-            end
+%            theta_polarplot = zeros(obj.bins, 1);
+%            for i = 1:obj.bins
+%               theta_polarplot(i) = (i/360)*(2*pi);
+%            end
             
             obj.findFrontierSequences(sm);
             
@@ -80,18 +80,18 @@ classdef Frontiermap < handle
             
             subplot(2,4,8)%, imshow(frontier_img);
             obj.draw();
-            los_map = obj.map.visibility_map;
-            for i = 1:size(obj.frontiers_convex_hull)-1
-                f =  obj.frontiers_convex_hull(i);
-                for j = (i+1):size(obj.frontiers_convex_hull)
-                    f_n = obj.frontiers_convex_hull(j);
-                    for k = 1:size(f.points,1)
-                        for l = 1:size(f_n.points,1)
-                            los_map = obj.lineofsight(f.points(k,:), f_n.points(l,:), los_map);
-                        end
-                    end
-                end
-            end
+%            los_map = obj.map.visibility_map;
+%            for i = 1:size(obj.frontiers_convex_hull)-1
+%                f =  obj.frontiers_convex_hull(i);
+%                for j = (i+1):size(obj.frontiers_convex_hull)
+%                    f_n = obj.frontiers_convex_hull(j);
+%                    for k = 1:size(f.points,1)
+%                        for l = 1:size(f_n.points,1)
+%                            los_map = obj.lineofsight(f.points(k,:), f_n.points(l,:), los_map);
+%                        end
+%                    end 
+%                end
+%            end
             
             %global color_map;
             %los_img = ind2rgb(los_map, color_map);
