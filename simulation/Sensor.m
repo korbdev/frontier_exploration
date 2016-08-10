@@ -3,6 +3,7 @@ classdef Sensor < handle
         occupancy_map;
         num_free_pixels;
         radius;
+        angle;
         wall;
         unknown;
         free;
@@ -11,6 +12,7 @@ classdef Sensor < handle
         function obj = Sensor(rgbimage, radius)
             obj.occupancy_map = rgbimage+1;
             obj.radius = radius;
+            obj.angle
             obj.wall = 1;
             obj.unknown = 2;
             obj.free = 3;

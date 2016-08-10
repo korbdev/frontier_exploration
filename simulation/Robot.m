@@ -216,7 +216,7 @@ classdef Robot < handle
                     if find(any(sf_vector, 2))
                         temp_paths_length = paths_length;
                         temp_paths_length(sf_vector==0) = Inf;
-                        [~, min_dist_frontier_idx] = min(temp_paths_length);
+                        %[~, min_dist_frontier_idx] = min(temp_paths_length);
                         %idx = 1;
                         %val = Inf;
                     end
