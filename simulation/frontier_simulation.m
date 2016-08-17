@@ -26,24 +26,28 @@ omega = 0.5;
 theta = 0.5;
 t_h = 0.01;
 
+robot_radius = 1;
+
 %fprintf(log, 'sigma %d, omega %d, theta %d, t_h %d\n', sigma, omega, theta, t_h);
 
-path = '~/research/frontier_exploration/map_24.bmp';
+path = '~/research/frontier_exploration/map_18.bmp';
 occupancy_map_pixel = imread(path);
 occupancy_map = rgb2ind(occupancy_map_pixel,color_map);
 
 [m, n] = size(occupancy_map);
-sensor = Sensor(occupancy_map,70);
+sensor = Sensor(occupancy_map,robot_radius,30, pi);
 map = Map(m, n);
 
-r = Robot(1, [20 20], sensor, map);
+r = Robot(robot_radius, [20 20], sensor, map);
 %r = Robot(2, [210 210], sensor, map);
 
 %r = Robot(2, [160 22], sensor, map);
 %r = Robot(2, [40 220], sensor, map);
 %r.explore(sigma, omega, theta, t_h);
 %r.exploreUspace();
-r.exploreCloseFrontiers();
+%r.exploreCloseFrontiers3DSegmented();
+r.exploreCloseFrontiers3D();
+%r.exploreFrontierTree();
 %r.exploreClosestBorder();
 
 %planner = Planner(r);

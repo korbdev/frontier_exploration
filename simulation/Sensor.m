@@ -3,44 +3,132 @@ classdef Sensor < handle
         occupancy_map;
         num_free_pixels;
         radius;
+        robot_radius;
         angle;
         wall;
         unknown;
         free;
     end
     methods
-        function obj = Sensor(rgbimage, radius)
+        function obj = Sensor(rgbimage,robot_radius, sensor_radius, angle)
             obj.occupancy_map = rgbimage+1;
-            obj.radius = radius;
-            obj.angle
+            obj.robot_radius = robot_radius;
+            obj.radius = sensor_radius;
+            obj.angle = angle;
             obj.wall = 1;
             obj.unknown = 2;
             obj.free = 3;
             obj.num_free_pixels = sum(sum(obj.occupancy_map == 3));
         end
         
-        function map =  update(obj, pose, map)
+        function map =  update(obj, pose, orientation, map)
             [m, n] = size(obj.occupancy_map);
             
-            for j = 1:m
-                i = n;
-                map = updateView(obj, pose, [j i], map);
+            neg = orientation-obj.angle/2;
+            pos = orientation+obj.angle/2;
+            
+            if neg < 0
+                neg = neg + 2*pi;
+            end
+            if pos < 0
+                pos = pos + 2*pi;
             end
             
-            for j = 1:m
-                i = 1;
-                map = updateView(obj, pose, [j i], map);
+            %right
+            for i = 1:m
+                j = n;
+                direction = [i j] - pose;
+                [theta, rho] = cart2pol(direction(2), direction(1));
+                if theta < 0
+                    theta = theta + 2*pi;
+                end
+                if neg > pos
+                   if theta < pos && theta >= 0 || theta > neg && theta <= 2*pi
+                       map = updateView(obj, pose, orientation, [i j], map);
+                   end
+                elseif neg < pos
+                    if theta < pos && theta > neg
+                       map = updateView(obj, pose, orientation, [i j], map);
+                   end
+                end
+                
+                %map = updateView(obj, pose, orientation, [i j], map);
             end
             
-            for i = 1:n
-                j = m;
-                map = updateView(obj, pose, [j i], map);
-            end
-            
-            for i = 1:n
+            %left
+            for i = 1:m
                 j = 1;
-                map = updateView(obj, pose, [j i], map);
+                direction = [i j] - pose;
+                [theta, rho] = cart2pol(direction(2), direction(1));
+                if theta < 0
+                    theta = theta + 2*pi;
+                end
+                if neg > pos
+                   if theta < pos && theta >= 0 || theta > neg && theta <= 2*pi
+                       map = updateView(obj, pose, orientation, [i j], map);
+                   end
+                elseif neg < pos
+                    if theta < pos && theta > neg
+                       map = updateView(obj, pose, orientation, [i j], map);
+                   end
+                end
+                
+            %    map = updateView(obj, pose, [i j], map);
             end
+            
+            %bottom
+            for j = 1:n
+                i = m;
+                direction = [i j] - pose;
+                [theta, rho] = cart2pol(direction(2), direction(1));
+                if theta < 0
+                    theta = theta + 2*pi;
+                end
+                if neg > pos
+                   if theta < pos && theta >= 0 || theta > neg && theta <= 2*pi
+                       map = updateView(obj, pose, orientation, [i j], map);
+                   end
+                elseif neg < pos
+                    if theta < pos && theta > neg
+                       map = updateView(obj, pose, orientation, [i j], map);
+                   end
+                end
+                
+                %map = updateView(obj, pose, [i j], map);
+            end
+            
+            %top
+            for j = 1:n
+                i = 1;
+                direction = [i j] - pose;
+                [theta, rho] = cart2pol(direction(2), direction(1));
+                if theta < 0
+                    theta = theta + 2*pi;
+                end
+                if neg > pos
+                   if theta < pos && theta >= 0 || theta > neg && theta <= 2*pi
+                       map = updateView(obj, pose, orientation, [i j], map);
+                   end
+                elseif neg < pos
+                    if theta < pos && theta > neg
+                       map = updateView(obj, pose, orientation, [i j], map);
+                   end
+                end
+                
+            %    map = updateView(obj, pose, [i j], map);
+            end
+            
+            %add footprint
+            %footprint = int32(obj.robot_radius*1.4);
+            %for i = -footprint:footprint
+                %for j = -footprint:footprint
+                    %n_i = pose(1)+i;
+                    %n_j = pose(2)+j;
+                    %if map(n_i, n_j) == obj.unknown
+                    %    map(n_i, n_j) = obj.free;
+                    %end
+                %end
+            %end
             
             free_territory = 0;
             occupied_territory = 0;
@@ -108,7 +196,7 @@ classdef Sensor < handle
             
         end
         
-        function map = updateView(obj, pose, pose_to, map)
+        function map = updateView(obj, pose, orientation, pose_to, map)
             x = pose(1);
             y = pose(2);
             x_end = pose_to(1);

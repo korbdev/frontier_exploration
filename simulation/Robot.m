@@ -2,6 +2,7 @@ classdef Robot < handle
     properties
         robot_size;
         pose;
+        orientation;
         goal;
         frontier_point;
         map;
@@ -20,6 +21,8 @@ classdef Robot < handle
             [m, n] = size(map.visibility_map);
             obj.robot_size = robot_size;
             obj.pose = initial_pose;
+            %obj.orientation = -3.9270;
+            obj.orientation = 0;
             obj.map = map;
             obj.sensor = sensor;
             obj.goal = [0 0];
@@ -29,6 +32,447 @@ classdef Robot < handle
             obj.current_path = zeros(m, n);
             obj.shorter_path = 0;
             obj.path_calc_counter = 0;
+        end
+        function obj = move(obj, old_pose, new_pose)
+            dir = new_pose - old_pose;
+            [theta, rho] = cart2pol(dir(2), dir(1));
+            obj.pose = new_pose;
+            if theta > pi && theta >= 0
+                obj.orientation = theta - 2*pi;
+            elseif theta < -pi && theta <= 0
+                obj.orientation = theta + 2*pi;
+            else
+                obj.orientation = theta;
+            end
+        end
+        function exploreFrontierTree(obj)
+            global log;
+            global color_map;
+            global total_path_length;
+            clims = [0 500];
+            calc_counter = 0;
+            percent = 0;
+            Y = [];
+            Y_percent = [];
+            Y_avg_travel = [];
+            Y_travel = [];
+            Y_total_pixel = [];
+            
+            obj.sense(); %first sense
+            
+            obj.orientation = pi/2;
+            obj.sense();
+            
+            obj.orientation = pi;
+            obj.sense();
+            
+            obj.orientation = -pi/2;
+            obj.sense();
+ 
+            draw(obj, obj.map);
+            
+            [m, n] = size(obj.map.visibility_map);
+            planner = PathPlanner(obj.map.visibility_map, m, n, obj.robot_size+1, true);
+            r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
+            
+            obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, planner.safety_map);
+            num_frontiers = size(obj.map.frontier_map.frontiers,1);
+            
+            journey_sum = 0;
+            
+            old_segment = 0;
+            current_segment = 0;
+            old_pose = obj.pose;
+            while num_frontiers > 0
+                calc_counter = calc_counter +1;
+                
+                %remeasure
+                planner.map = obj.map.visibility_map;
+                r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
+                sm = planner.safety_map;
+                
+                free_pixels = sum(sum(obj.map.visibility_map == 3));
+                old_percent = percent;
+                percent = free_pixels/obj.sensor.num_free_pixels;
+                
+                fprintf(log,'iteration %d, path travelled %d, percent explored %f(+%f)\n', calc_counter,total_path_length, percent, ((percent-old_percent)*100));
+
+                obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, sm);
+                
+                num_frontiers = size(obj.map.frontier_map.frontiers,1);
+                draw(obj, obj.map);
+                pause(0.01);
+            end
+        end
+        function exploreCloseFrontiers3DSegmented(obj)
+            global log;
+            global color_map;
+            global total_path_length;
+            %planner = Planner(obj);
+            clims = [0 500];
+            calc_counter = 0;
+            percent = 0;
+            Y = [];
+            Y_percent = [];
+            Y_avg_travel = [];
+            Y_travel = [];
+            Y_total_pixel = [];
+            
+            %obj.sense(); %first sense
+            %draw(obj, obj.map);
+            %obj.move(obj.pose, obj.pose+1);
+            
+            obj.sense(); %first sense
+            draw(obj, obj.map);
+            
+            obj.orientation = pi/2;
+            obj.sense();
+            
+            obj.orientation = pi;
+            obj.sense();
+            
+            obj.orientation = -pi/2;
+            obj.sense();
+ 
+            draw(obj, obj.map);
+            
+            [m, n] = size(obj.map.visibility_map);
+            planner = PathPlanner(obj.map.visibility_map, m, n, obj.robot_size+1, true);
+            r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
+            
+            obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, planner.safety_map);
+            num_frontiers = size(obj.map.frontier_map.frontiers,1);
+            
+            journey_sum = 0;
+            
+            old_segment = 0;
+            current_segment = 0;
+            old_pose = obj.pose;
+            while num_frontiers > 0
+                calc_counter = calc_counter +1;
+                
+                sm = planner.safety_map;
+                subplot(2, 4, 4);
+                imagesc(planner.safety_map);
+                
+                subplot(2, 4, 3);
+                imagesc(r_map);
+                
+                grey_map = sm == 2;
+                temp_sm = sm;
+                temp_sm(grey_map) = 0;
+                %perform segmentation
+                current = ind2rgb(temp_sm, color_map);
+
+                %BW = im2bw(current,0.5);
+
+                %im = -bwdist(BW, 'euclidean');
+
+                %mask = imextendedmin(im,2);
+                
+                %D2 = imimposemin(im ,mask);
+                im = imgaussfilt(imcomplement(current), 4);
+                wim = watershed(im,8);
+                
+                %wim = watershed(im, 8);
+                
+                
+                %imshowpair(bw,mask,'blend')
+                
+                segmented = zeros(240);
+                segments = Segment.empty;
+                for i = 1:240
+                    for j = 1:240
+                        if obj.map.visibility_map(i, j) == 3
+                            if wim(i, j) ~= 0
+                                id = wim(i,j);
+
+                                if id > size(segments, 2)
+                                    seg = Segment(id);
+                                    seg.addPoint(i, j);
+                                    segments(id) = seg;
+                                else
+                                    seg = segments(id);
+                                    seg.id = id;
+                                    seg.addPoint(i, j);
+                                end
+                            end
+                            segmented(i,j) = wim(i, j);
+                        end
+                    end
+                end
+                
+                current_segment = segmented(obj.pose(1), obj.pose(2));
+                old_segment = segmented(old_pose(1), old_pose(2));
+                
+                subplot(2,4,3);
+                imagesc(im);
+                
+                subplot(2,4,4);
+                imagesc(segmented);
+                
+                %%calculate FrontierGraph
+                %FG = FrontierGraph(obj.map.frontier_map.frontiers, obj.map, planner);
+                %temp = (FG.weights > FG.weights_uspace);
+                
+                %dp = FG.dot_product;
+                
+                frontiers = obj.map.frontier_map.frontiers;
+                dist_robot_frontier = Inf;
+                min_dist_frontier_idx = 0;
+                paths_length = [];
+                for i=1:size(frontiers,1)
+                    temp_frontier = frontiers(i);
+
+                    distance = planner.reachability_map(temp_frontier.center(1), temp_frontier.center(2));
+                    paths_length = [paths_length; distance];
+
+                    if distance < dist_robot_frontier
+                        dist_robot_frontier = distance;
+                        min_dist_frontier_idx = i;
+                    end
+                end
+                
+                frontier = obj.map.frontier_map.frontiers(min_dist_frontier_idx);
+                
+                min_dist = Inf;
+                for i=1:size(frontiers,1)
+                    points = frontiers(i).points;
+                    for j = size(points, 1)
+                        p = points(j,:);
+                        segment_robot = segmented(obj.pose(1), obj.pose(2));
+                        segment_frontier = segmented(p(1), p(2));
+                        if old_segment == segment_frontier
+                            %frontier = frontiers(i);
+                            dist = paths_length(i);
+                            if dist < min_dist
+                                frontier = frontiers(i);
+                                min_dist = dist;
+                            end
+                        end
+                    end
+                end
+                
+                path = planner.generatePath(frontier.center(1), frontier.center(2));   
+                
+                if isequal(frontier.center, obj.pose)
+                    %rotate
+                    obj.orientation = 0;
+                    obj.sense();
+                    
+                    obj.orientation = pi/2;
+                    obj.sense();
+
+                    obj.orientation = pi;
+                    obj.sense();
+
+                    obj.orientation = -pi/2;
+                    obj.sense();
+                end
+                
+                if min_dist == Inf || current_segment == old_segment
+                    old_pose = obj.pose;
+                end
+                
+                for i = size(path,1):-1:1
+                    point = path(i,:);
+                    total_path_length = total_path_length + 1;
+                    dir = [double(point(1)), double(point(2))] - obj.pose;
+                    [theta, rho] = cart2pol(dir(2), dir(1));
+                    if theta > pi && theta >= 0
+                        obj.orientation = theta - 2*pi;
+                    elseif theta < -pi && theta <= 0
+                        obj.orientation = theta + 2*pi;
+                    else
+                        obj.orientation = theta;
+                    end
+                    obj.pose = [double(point(1)), double(point(2))];
+                    obj.complete_path(point(1), point(2)) = 3;
+                    obj.sense();
+                    %draw(obj, obj.map);
+                    %pause(0.001);
+                end
+                   
+                planner.map = obj.map.visibility_map;
+                r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
+                sm = planner.safety_map;
+                
+                free_pixels = sum(sum(obj.map.visibility_map == 3));
+                old_percent = percent;
+                percent = free_pixels/obj.sensor.num_free_pixels;
+                
+                fprintf(log,'iteration %d, path travelled %d, percent explored %f(+%f)\n', calc_counter,total_path_length, percent, ((percent-old_percent)*100));
+
+                obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, sm);
+                
+                num_frontiers = size(obj.map.frontier_map.frontiers,1);
+                draw(obj, obj.map);
+                pause(0.01);
+            end
+            %obj.move(obj.pose, [obj.pose(1)+1,obj.pose(2)+1]);
+            %obj.move(obj.pose, obj.pose+1);
+            %obj.sense(); %first sense
+            %draw(obj, obj.map);
+        end
+        function exploreCloseFrontiers3D(obj)
+            global log;
+            global color_map;
+            global total_path_length;
+            %planner = Planner(obj);
+            clims = [0 500];
+            calc_counter = 0;
+            percent = 0;
+            Y = [];
+            Y_percent = [];
+            Y_avg_travel = [];
+            Y_travel = [];
+            Y_total_pixel = [];
+            
+            %obj.sense(); %first sense
+            %draw(obj, obj.map);
+            %obj.move(obj.pose, obj.pose+1);
+            
+            obj.sense(); %first sense
+            draw(obj, obj.map);
+            
+            obj.orientation = pi/2;
+            obj.sense();
+            
+            obj.orientation = pi;
+            obj.sense();
+            
+            obj.orientation = -pi/2;
+            obj.sense();
+ 
+            draw(obj, obj.map);
+            
+            [m, n] = size(obj.map.visibility_map);
+            planner = PathPlanner(obj.map.visibility_map, m, n, obj.robot_size+1, true);
+            r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
+            
+            obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, planner.safety_map);
+            num_frontiers = size(obj.map.frontier_map.frontiers,1);
+            
+            journey_sum = 0;
+            
+            old_segment = 0;
+            current_segment = 0;
+            old_pose = obj.pose;
+            while num_frontiers > 0
+                calc_counter = calc_counter +1;
+                
+                sm = planner.safety_map;
+                subplot(2, 4, 4);
+                imagesc(planner.safety_map);
+                
+                subplot(2, 4, 3);
+                imagesc(r_map);
+                
+                pot = sm;
+                
+                mask = false(size(pot));
+                mask(1,1) = true;
+
+                W = graydiffweight(pot, mask, 'GrayDifferenceCutoff', 25);
+
+                thresh = .05;
+                [BW, D] = imsegfmm(W, mask, thresh);
+                subplot(2, 4, 5);
+                imshow(BW)
+                title('Segmented Image')
+
+                subplot(2, 4, 6);
+                imshow(D)
+                title('Geodesic Distances')
+                
+                                %%calculate FrontierGraph
+                %FG = FrontierGraph(obj.map.frontier_map.frontiers, obj.map, planner);
+                %temp = (FG.weights > FG.weights_uspace);
+                
+                %dp = FG.dot_product;
+                
+                frontiers = obj.map.frontier_map.frontiers;
+                dist_robot_frontier = Inf;
+                min_dist_frontier_idx = 0;
+                paths_length = [];
+                for i=1:size(frontiers,1)
+                    temp_frontier = frontiers(i);
+
+                    distance = planner.reachability_map(temp_frontier.center(1), temp_frontier.center(2));
+                    paths_length = [paths_length; distance];
+
+                    if distance < dist_robot_frontier
+                        dist_robot_frontier = distance;
+                        min_dist_frontier_idx = i;
+                    end
+                end
+                
+                frontier = obj.map.frontier_map.frontiers(min_dist_frontier_idx);
+                
+                dist_robot_frontier = planner.reachability_map(frontier.center(1), frontier.center(2));
+                journey_sum = journey_sum + dist_robot_frontier;
+                avg_journey = journey_sum/calc_counter
+                
+                path = planner.generatePath(frontier.center(1), frontier.center(2));   
+                
+                if isequal(frontier.center, obj.pose)
+                    %rotate
+                    obj.orientation = 0;
+                    obj.sense();
+                    
+                    obj.orientation = pi/2;
+                    obj.sense();
+
+                    obj.orientation = pi;
+                    obj.sense();
+
+                    obj.orientation = -pi/2;
+                    obj.sense();
+                end
+                
+                for i = size(path,1):-1:1
+                    point = path(i,:);
+                    total_path_length = total_path_length + 1;
+                    dir = [double(point(1)), double(point(2))] - obj.pose;
+                    [theta, rho] = cart2pol(dir(2), dir(1));
+                    if theta > pi && theta >= 0
+                        obj.orientation = theta - 2*pi;
+                    elseif theta < -pi && theta <= 0
+                        obj.orientation = theta + 2*pi;
+                    else
+                        obj.orientation = theta;
+                    end
+                    obj.pose = [double(point(1)), double(point(2))];
+                    obj.complete_path(point(1), point(2)) = 3;
+                    obj.sense();
+                    %draw(obj, obj.map);
+                    %pause(0.001);
+                end
+                   
+                planner.map = obj.map.visibility_map;
+                r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
+                sm = planner.safety_map;
+                
+                free_pixels = sum(sum(obj.map.visibility_map == 3));
+                old_percent = percent;
+                percent = free_pixels/obj.sensor.num_free_pixels;
+                
+                fprintf(log,'iteration %d, path travelled %d, percent explored %f(+%f)\n', calc_counter,total_path_length, percent, ((percent-old_percent)*100));
+
+                str = sprintf('~/research/frontier_exploration/output/D_%d.png', calc_counter);
+                
+                imwrite(D,str);
+                
+                obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, sm);
+                
+                num_frontiers = size(obj.map.frontier_map.frontiers,1);
+                draw(obj, obj.map);
+                pause(0.01);
+            end
+            %obj.move(obj.pose, [obj.pose(1)+1,obj.pose(2)+1]);
+            %obj.move(obj.pose, obj.pose+1);
+            %obj.sense(); %first sense
+            %draw(obj, obj.map);
         end
         function exploreCloseFrontiers(obj)
             global log;
@@ -1061,7 +1505,9 @@ classdef Robot < handle
         end
         
         function sense(obj)
-            obj.map.visibility_map = obj.sensor.update(obj.pose, obj.map.visibility_map);
+            obj.pose
+            obj.orientation
+            obj.map.visibility_map = obj.sensor.update(obj.pose, obj.orientation, obj.map.visibility_map);
         end
         
         function image = drawRobot(obj, h, image)
@@ -1081,8 +1527,10 @@ classdef Robot < handle
                 f = obj.map.frontier_map.frontiers(i);
                 image(floor(f.mean(1)), floor(f.mean(2))) = 5;
                 image(f.center(1), f.center(2)) = 4;
+                %circles = [circles;f.center(2), f.center(1) obj.sensor.radius;];
             end
             
+            circles = [circles; obj.pose(2), obj.pose(1) obj.sensor.radius;];
             circles = [circles; obj.pose(2) obj.pose(1) obj.robot_size;];
             
             if obj.goal ~= 0
@@ -1094,10 +1542,12 @@ classdef Robot < handle
                 circles = [circles; obj.frontier_point(2) obj.frontier_point(1) obj.robot_size*2+obj.collision_radius;];
             end
             
+            
             if ~isempty(circles)
                 rgb_img = ind2rgb(image, color_map);
                 shapeInserter = vision.ShapeInserter('Shape','Circles');
                 new_image = step(shapeInserter, rgb_img, circles);
+                plot([1 1], [240,240]);
                 image = (rgb2ind(new_image, color_map));
             end
             

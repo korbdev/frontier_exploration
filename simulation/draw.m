@@ -12,6 +12,11 @@ function draw(robot, map)
     rgb_img = ind2rgb(image, color_map);
     imshow(rgb_img);
 
+    hold on;
+    [x, y] = pol2cart(robot.orientation, robot.robot_size);
+    plot([robot.pose(2) robot.pose(2)+x],[robot.pose(1) robot.pose(1)+y]);
+    hold off;
+    
     subplot(2,4,2)
     map_img = ind2rgb(robot.sensor.occupancy_map-1, color_map);
     imshow(map_img);
