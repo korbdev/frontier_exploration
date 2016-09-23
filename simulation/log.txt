@@ -1,5 +1,0 @@
-iteration 1, path travelled 25, percent explored 0.039945(+3.994459)
-iteration 2, path travelled 38, percent explored 0.063889(+2.394414)
-iteration 3, path travelled 45, percent explored 0.066829(+0.294001)
-iteration 4, path travelled 72, percent explored 0.088455(+2.162605)
-iteration 5, path travelled 80, percent explored 0.089020(+0.056539)

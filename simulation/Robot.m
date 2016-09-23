@@ -45,10 +45,12 @@ classdef Robot < handle
                 obj.orientation = theta;
             end
         end
-        function exploreFrontierTree(obj)
+        function exploreFrontierTree(obj, go_to_index)
             global log;
             global color_map;
             global total_path_length;
+            global frontier_memory;
+            global saved_frontier_memory;
             clims = [0 500];
             calc_counter = 0;
             percent = 0;
@@ -78,14 +80,23 @@ classdef Robot < handle
             obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, planner.safety_map);
             num_frontiers = size(obj.map.frontier_map.frontiers,1);
             
+            root = Frontier(0, obj.pose, 0, planner.safety_map);
+            current_node = FrontierNode(root.jFrontier);
+            
+            ftree = current_node;
+            ftree.draw('frontier_tree');
+            
             journey_sum = 0;
+            
+            if size(saved_frontier_memory,1) < go_to_index
+                go_to_index = size(saved_frontier_memory,1);
+            end
             
             old_segment = 0;
             current_segment = 0;
             old_pose = obj.pose;
             while num_frontiers > 0
                 calc_counter = calc_counter +1;
-                
                 %remeasure
                 planner.map = obj.map.visibility_map;
                 r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
@@ -95,10 +106,124 @@ classdef Robot < handle
                 old_percent = percent;
                 percent = free_pixels/obj.sensor.num_free_pixels;
                 
-                fprintf(log,'iteration %d, path travelled %d, percent explored %f(+%f)\n', calc_counter,total_path_length, percent, ((percent-old_percent)*100));
-
-                obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, sm);
+                %fprintf(log,'iteration %d, path travelled %d, percent explored %f(+%f)\n', calc_counter,total_path_length, percent, ((percent-old_percent)*100));
                 
+                %get Frontiers in Sensor range
+                %{
+                f = obj.map.frontier_map.inRange(obj.pose, obj.sensor.radius);
+                if ~isempty(f)
+                    for i = 1:size(f,1)
+                       %fprintf('insert %s in %s\n', f(i).jFrontier.toString(), current_node.getContent().toString()); 
+                       %check if Sensors in range are passable
+                       
+                       local_planner = PathPlanner(sensing_map, m, n, obj.robot_size+1, true);
+                       local_map = local_planner.planCostMap(obj.pose(1), obj.pose(2), false);
+                       local_path = planner.generatePath(f(i).center(1), f(i).center(2));
+                       if ~isempty(local_path)
+                           
+                       else
+                           fprintf('empty\n'); 
+                       end
+                    end
+                end
+                %}
+
+                [in, out] = obj.map.frontier_map.inRange(obj);
+                
+                %fill tree with elements in range
+                if ~isempty(in)
+                    for i = 1:size(in,1)
+                        ftree.insert(current_node.getContent(), in(i).jFrontier);
+                    end
+                end
+                
+                frontiers = obj.map.frontier_map.frontiers;
+                
+                %Extract nearest Neighbour frontier
+                dist_robot_frontier = Inf;
+                min_dist_frontier_idx = 0;
+                paths_length = [];
+                for i=1:size(frontiers,1)
+                    temp_frontier = frontiers(i);
+
+                    distance = planner.reachability_map(temp_frontier.center(1), temp_frontier.center(2));
+                    paths_length = [paths_length; distance];
+
+                    if distance < dist_robot_frontier
+                        dist_robot_frontier = distance;
+                        min_dist_frontier_idx = i;
+                    end
+                end
+                min_dist_frontier_idx
+                if go_to_index > 0 && calc_counter < go_to_index
+                    min_dist_frontier_idx = saved_frontier_memory(calc_counter);
+                else
+                    min_dist_frontier_idx = input('get frontier index\n');  
+                end
+                
+                frontier_memory = [frontier_memory; min_dist_frontier_idx];
+                saved_frontier_memory
+                save('memory.mat', 'frontier_memory');
+                
+                
+                %calculate Frontier Tree
+                frontier = obj.map.frontier_map.frontiers(uint32(min_dist_frontier_idx));
+                current_node = ftree.findClosestNode(frontier.jFrontier);
+                fprintf('Current Node %s\n',current_node.getContent().toString()); 
+
+                ftree.draw('frontier_tree');
+                
+                dist_robot_frontier = planner.reachability_map(frontier.center(1), frontier.center(2));
+                journey_sum = journey_sum + dist_robot_frontier;
+                avg_journey = journey_sum/calc_counter;
+                
+                %generate Path
+                path = planner.generatePath(frontier.center(1), frontier.center(2));   
+                
+                if isequal(frontier.center, obj.pose)
+                    %rotate
+                    obj.orientation = 0;
+                    obj.sense();
+                    
+                    obj.orientation = pi/2;
+                    obj.sense();
+
+                    obj.orientation = pi;
+                    obj.sense();
+
+                    obj.orientation = -pi/2;
+                    obj.sense();
+                end
+                
+                %GO
+                for i = size(path,1):-1:1
+                    point = path(i,:);
+                    total_path_length = total_path_length + 1;
+                    dir = [double(point(1)), double(point(2))] - obj.pose;
+                    [theta, rho] = cart2pol(dir(2), dir(1));
+                    if theta > pi && theta >= 0
+                        obj.orientation = theta - 2*pi;
+                    elseif theta < -pi && theta <= 0
+                        obj.orientation = theta + 2*pi;
+                    else
+                        obj.orientation = theta;
+                    end
+                    obj.pose = [double(point(1)), double(point(2))];
+                    obj.complete_path(point(1), point(2)) = 3;
+                    obj.sense();
+                end
+                
+                planner.map = obj.map.visibility_map;
+                r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
+                sm = planner.safety_map;
+                
+                free_pixels = sum(sum(obj.map.visibility_map == 3));
+                old_percent = percent;
+                percent = free_pixels/obj.sensor.num_free_pixels;
+                
+                fprintf(log,'iteration %d, path travelled %d, percent explored %f(+%f)\n', calc_counter,total_path_length, percent, ((percent-old_percent)*100));
+                
+                obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, sm);
                 num_frontiers = size(obj.map.frontier_map.frontiers,1);
                 draw(obj, obj.map);
                 pause(0.01);
@@ -408,7 +533,7 @@ classdef Robot < handle
                 end
                 
                 frontier = obj.map.frontier_map.frontiers(min_dist_frontier_idx);
-                
+
                 dist_robot_frontier = planner.reachability_map(frontier.center(1), frontier.center(2));
                 journey_sum = journey_sum + dist_robot_frontier;
                 avg_journey = journey_sum/calc_counter

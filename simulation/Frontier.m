@@ -11,6 +11,8 @@ classdef Frontier < handle
        center
        direction
        color
+       
+       jFrontier
    end
    methods
        function obj = Frontier(id, points, color, map)
@@ -26,6 +28,7 @@ classdef Frontier < handle
               obj.center = obj.points(idx,:);
               obj.getOuterFrontier(map);
               obj.direction = obj.getFrontierDirection(map, 1);
+              obj.jFrontier = JFrontier(id, points(:,1), points(:,2), color);
           end
        end
        function [dist,idx] = getClosestPoint(obj, point)

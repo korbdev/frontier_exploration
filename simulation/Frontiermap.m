@@ -510,6 +510,43 @@ classdef Frontiermap < handle
                 end
             end
         end
+        function [in, out] = inRange(obj, robot)
+            global color_map;
+            [m,n] = size(obj.map.visibility_map);
+            in = Frontier.empty();
+            out = Frontier.empty();
+            
+            sensing_map = obj.map.generateSensingMap(robot.pose, robot.sensor.radius+2*robot.robot_size+1);
+            for i = 1:size(obj.frontiers,1)
+                frontier = obj.frontiers(i);
+                sensing_map(frontier.center(1), frontier.center(2)) = 4;
+            end
+            
+            subplot(2, 4, 4);
+            sense_img = ind2rgb(sensing_map, color_map);
+            imshow(sense_img);
+            
+            for i = 1:size(obj.frontiers,1)
+                frontier = obj.frontiers(i);
+                if frontier.getDistance(robot.pose) <= robot.sensor.radius
+                    local_planner = PathPlanner(sensing_map, m, n, robot.robot_size+1, true);
+                    local_map = local_planner.planCostMap(robot.pose(1), robot.pose(2), false);
+                    local_path = local_planner.generatePath(frontier.center(1), frontier.center(2));
+                    if ~isempty(local_path)
+                        in = [in; frontier];
+                    else
+                        subplot(2, 4, 3);
+                        local_planner.safety_map(frontier.center(1), frontier.center(2)) = 4;
+                        sm_img = ind2rgb(local_planner.safety_map, color_map);
+                        imshow(sm_img);
+                        out = [out; frontier];
+                        fprintf('empty\n');
+                    end
+                else
+                    out = [out; frontier];
+                end
+            end
+        end
         function draw(obj)
             global color_map;
             frontier_img = ind2rgb(obj.frontier_map, color_map);

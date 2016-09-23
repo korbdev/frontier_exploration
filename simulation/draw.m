@@ -1,5 +1,8 @@
 function draw(robot, map)
     global color_map;
+    global robot_image;
+    subplot(2, 4, 3);
+    imshow(robot_image);
     
     rgb_img = ind2rgb(map.visibility_map, color_map);
 
@@ -11,7 +14,9 @@ function draw(robot, map)
     image = robot.drawRobot(h, image);
     rgb_img = ind2rgb(image, color_map);
     imshow(rgb_img);
-
+    
+    robot_image = rgb_img;
+    
     hold on;
     [x, y] = pol2cart(robot.orientation, robot.robot_size);
     plot([robot.pose(2) robot.pose(2)+x],[robot.pose(1) robot.pose(1)+y]);
