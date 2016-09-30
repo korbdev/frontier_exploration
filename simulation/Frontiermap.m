@@ -516,7 +516,8 @@ classdef Frontiermap < handle
             in = Frontier.empty();
             out = Frontier.empty();
             
-            sensing_map = obj.map.generateSensingMap(robot.pose, robot.sensor.radius+2*robot.robot_size+1);
+           % sensing_map = obj.map.generateSensingMap(robot.pose, robot.sensor.radius+2*robot.robot_size+1);
+           sensing_map = obj.map.generateSensingMap(robot.pose, robot.sensor.radius+15);
             for i = 1:size(obj.frontiers,1)
                 frontier = obj.frontiers(i);
                 sensing_map(frontier.center(1), frontier.center(2)) = 4;

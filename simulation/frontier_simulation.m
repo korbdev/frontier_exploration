@@ -53,7 +53,7 @@ r = Robot(robot_radius, [180 180], sensor, map);
 
 %r = Robot(2, [160 22], sensor, map);
 %r = Robot(2, [40 220], sensor, map);
-%r.explore(sigma, omega, theta, t_h);
+%r.explore(sigma, omega, theta, t_h);2
 %r.exploreUspace();
 %r.exploreCloseFrontiers3DSegmented();
 %r.exploreCloseFrontiers3D();

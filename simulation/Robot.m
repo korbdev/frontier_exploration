@@ -84,7 +84,6 @@ classdef Robot < handle
             current_node = FrontierNode(root.jFrontier);
             
             ftree = current_node;
-            ftree.draw('frontier_tree');
             
             journey_sum = 0;
             
@@ -105,38 +104,85 @@ classdef Robot < handle
                 free_pixels = sum(sum(obj.map.visibility_map == 3));
                 old_percent = percent;
                 percent = free_pixels/obj.sensor.num_free_pixels;
-                
-                %fprintf(log,'iteration %d, path travelled %d, percent explored %f(+%f)\n', calc_counter,total_path_length, percent, ((percent-old_percent)*100));
-                
-                %get Frontiers in Sensor range
-                %{
-                f = obj.map.frontier_map.inRange(obj.pose, obj.sensor.radius);
-                if ~isempty(f)
-                    for i = 1:size(f,1)
-                       %fprintf('insert %s in %s\n', f(i).jFrontier.toString(), current_node.getContent().toString()); 
-                       %check if Sensors in range are passable
-                       
-                       local_planner = PathPlanner(sensing_map, m, n, obj.robot_size+1, true);
-                       local_map = local_planner.planCostMap(obj.pose(1), obj.pose(2), false);
-                       local_path = planner.generatePath(f(i).center(1), f(i).center(2));
-                       if ~isempty(local_path)
-                           
-                       else
-                           fprintf('empty\n'); 
-                       end
-                    end
-                end
-                %}
 
                 [in, out] = obj.map.frontier_map.inRange(obj);
                 
-                %fill tree with elements in range
-                if ~isempty(in)
-                    for i = 1:size(in,1)
-                        ftree.insert(current_node.getContent(), in(i).jFrontier);
+                leafs = ftree.getLeafsAsArray();
+                tree_height = current_node.getRank();
+                
+                loop_node = [];
+                
+                distance_mat = zeros(size(leafs,1), size(out,1));
+                
+                for i = 1:size(leafs,1)
+                    leaf = leafs(i).getContent();
+                    if ~isequal(leaf, current_node.getContent())
+                        if ~isempty(out)
+                            for j = 1:size(out,1)
+                               out_f = out(j);
+                               distance_mat(i, j) = JFrontier.getDistance(leaf.center_x, leaf.center_y, out_f.center(1), out_f.center(2))
+                            end
+                        else
+                            ftree.mark(leafs(i).getContent());
+                        end
+                    else
+                        distance_mat(i,:) = NaN;
                     end
                 end
                 
+                min_distances = min(distance_mat,[], 2)
+                
+                delete_node = [];
+                
+                %for every row (leafs)
+                for i = 1:size(distance_mat,1)
+                    min_dist = min_distances(i,:);
+                    delete_node_row = distance_mat(i,:) <= min_dist;
+                    delete_node = [delete_node; delete_node_row];
+                end   
+                
+                temp_distance_mat = distance_mat;
+                temp_distance_mat(delete_node ~= 1) = 0;
+                %for every column (out)
+                for i = 1:size(distance_mat,2)
+                    %column sum > 1 -> node to delete, 2 minima
+                    if sum(delete_node(:,i)) > 1
+                        distance_column = temp_distance_mat(:,i)
+                        for j = 1:size(distance_column)
+                            min_dist = min(distance_mat(:,i));
+                            if distance_column(j) > min_dist
+                                leaf = leafs(j);
+                                leaf_height = leaf.getRank();
+                                if tree_height -leaf_height > 0
+                                   loop_node = leaf;
+                                end
+                                ftree.mark(leaf.getContent());
+                                %delete all other entries in delete_node
+                                %this node is already marked and will not
+                                %be found anymore in the ftree
+                                %delete_node(j,:) = 0;
+                            end
+                        end
+                    end
+                    
+                    %column sum < 1 -> node to insert
+                    if sum(delete_node(:,i)) < 1
+                        ftree.insert(current_node.getParent().getContent(), out(i).jFrontier);
+                    end
+                end
+              
+                %fill tree with elements in range
+                if ~isempty(in)
+                    for i = 1:size(in,1)
+                        c_x = current_node.getContent().points_x
+                        in_x = in(i).jFrontier.points_x
+                        ftree.insert(current_node.getContent(), in(i).jFrontier);
+                    end
+                else
+                    ftree.mark(current_node.getContent());
+                end
+                ftree.draw('zftree');
+
                 frontiers = obj.map.frontier_map.frontiers;
                 
                 %Extract nearest Neighbour frontier
@@ -154,12 +200,21 @@ classdef Robot < handle
                         min_dist_frontier_idx = i;
                     end
                 end
+                
                 min_dist_frontier_idx
-                if go_to_index > 0 && calc_counter < go_to_index
-                    min_dist_frontier_idx = saved_frontier_memory(calc_counter);
-                else
-                    min_dist_frontier_idx = input('get frontier index\n');  
+                
+                %if isempty(in) |  ~isempty(loop_node)
+                if ~isempty(loop_node)
+                    min_dist_frontier_idx = input('get frontier index\n'); 
+                %else
+                %   min_dist_frontier_idx = input('get frontier index\n');  
                 end
+                
+                %if go_to_index > 0 && calc_counter < go_to_index
+                %    min_dist_frontier_idx = saved_frontier_memory(calc_counter);
+                %else
+                    %min_dist_frontier_idx = input('get frontier index\n');  
+                %end
                 
                 frontier_memory = [frontier_memory; min_dist_frontier_idx];
                 saved_frontier_memory
@@ -169,9 +224,8 @@ classdef Robot < handle
                 %calculate Frontier Tree
                 frontier = obj.map.frontier_map.frontiers(uint32(min_dist_frontier_idx));
                 current_node = ftree.findClosestNode(frontier.jFrontier);
+                     
                 fprintf('Current Node %s\n',current_node.getContent().toString()); 
-
-                ftree.draw('frontier_tree');
                 
                 dist_robot_frontier = planner.reachability_map(frontier.center(1), frontier.center(2));
                 journey_sum = journey_sum + dist_robot_frontier;
