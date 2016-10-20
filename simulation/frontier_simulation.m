@@ -21,6 +21,8 @@ save('memory.mat', 'frontier_memory');
 
 global total_path_length;
 global robot_image;
+global calc_counter;
+calc_counter = 0;
 total_path_length = 0;
 robot_image = 0;
 %sigma = 1;
@@ -47,11 +49,13 @@ map = Map(m, n);
 
 %r = Robot(robot_radius, [20 20], sensor, map); %map 11
 %r = Robot(robot_radius, [170 150], sensor, map); %map 11
-%r = Robot(robot_radius, [20 120], sensor, map);
+
+%r = Robot(robot_radius, [20 60], sensor, map); %hq nn
 r = Robot(robot_radius, [180 180], sensor, map);
+
 %r = Robot(2, [210 210], sensor, map);
 
-%r = Robot(2, [160 22], sensor, map);
+%r = Robot(2, [20 120], sensor, map);
 %r = Robot(2, [40 220], sensor, map);
 %r.explore(sigma, omega, theta, t_h);2
 %r.exploreUspace();

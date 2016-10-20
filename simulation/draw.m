@@ -1,6 +1,7 @@
 function draw(robot, map)
     global color_map;
     global robot_image;
+    global calc_counter;
     subplot(2, 4, 3);
     imshow(robot_image);
     
@@ -14,6 +15,9 @@ function draw(robot, map)
     image = robot.drawRobot(h, image);
     rgb_img = ind2rgb(image, color_map);
     imshow(rgb_img);
+    
+    occupancy_map_s = sprintf('~/research/frontier_exploration/simulation/occupancy_map/occupancy_map_%d.png', calc_counter);
+    imwrite(rgb_img, occupancy_map_s);
     
     robot_image = rgb_img;
     

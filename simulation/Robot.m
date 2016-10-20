@@ -51,6 +51,7 @@ classdef Robot < handle
             global total_path_length;
             global frontier_memory;
             global saved_frontier_memory;
+            global calc_counter;
             clims = [0 500];
             calc_counter = 0;
             percent = 0;
@@ -101,6 +102,13 @@ classdef Robot < handle
                 r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
                 sm = planner.safety_map;
                 
+                subplot(2,4,5);
+                imagesc(r_map);
+                %colormap('default')
+                
+                r_map_s = sprintf('~/research/frontier_exploration/simulation/r_map/rmap_%d.png', calc_counter);
+                imwrite(r_map, parula(256), r_map_s);
+                
                 free_pixels = sum(sum(obj.map.visibility_map == 3));
                 old_percent = percent;
                 percent = free_pixels/obj.sensor.num_free_pixels;
@@ -143,6 +151,9 @@ classdef Robot < handle
                 
                 temp_distance_mat = distance_mat;
                 temp_distance_mat(delete_node ~= 1) = 0;
+                
+                marked_rank = 0;
+                loop_depth = 0;
                 %for every column (out)
                 for i = 1:size(distance_mat,2)
                     %column sum > 1 -> node to delete, 2 minima
@@ -153,14 +164,16 @@ classdef Robot < handle
                             if distance_column(j) > min_dist
                                 leaf = leafs(j);
                                 leaf_height = leaf.getRank();
-                                if tree_height -leaf_height > 0
+                                loop_depth = tree_height -leaf_height
+                                if loop_depth > 1
                                    loop_node = leaf;
                                 end
+                                marked_rank = leaf.getRank();
                                 ftree.mark(leaf.getContent());
                                 %delete all other entries in delete_node
                                 %this node is already marked and will not
                                 %be found anymore in the ftree
-                                %delete_node(j,:) = 0;
+                                delete_node(j,:) = 0;
                             end
                         end
                     end
@@ -169,8 +182,28 @@ classdef Robot < handle
                     if sum(delete_node(:,i)) < 1
                         ftree.insert(current_node.getParent().getContent(), out(i).jFrontier);
                     end
+                    
                 end
               
+                tree_s = sprintf('tree/tree_pre_insert_%d', calc_counter);
+                ftree.draw(tree_s);
+                
+                leafs_marked = ftree.getLeafsAsArray();
+                distance_vec = zeros(size(leafs_marked,1),1);
+                
+                
+                for i = 1:size(leafs_marked,1)
+                   leaf = leafs_marked(i).getContent();
+                   if ~isequal(leaf, current_node.getContent()) && ~current_node.isSibling(leaf)
+                       %distance_vec(i) = JFrontier.getDistance(leaf.center_x, leaf.center_y, obj.pose(1), obj.pose(2));
+                       distance_vec(i) = planner.reachability_map(leaf.center_x, leaf.center_y);
+                   else
+                       distance_vec(i) = NaN;
+                   end
+                end
+                
+                min_distance_leaf = min(distance_vec);
+                
                 %fill tree with elements in range
                 if ~isempty(in)
                     for i = 1:size(in,1)
@@ -179,9 +212,11 @@ classdef Robot < handle
                         ftree.insert(current_node.getContent(), in(i).jFrontier);
                     end
                 else
+                    marked_rank = current_node.getRank();
                     ftree.mark(current_node.getContent());
                 end
-                ftree.draw('zftree');
+                tree_s = sprintf('tree/tree_%d', calc_counter);
+                ftree.draw(tree_s);
 
                 frontiers = obj.map.frontier_map.frontiers;
                 
@@ -201,13 +236,40 @@ classdef Robot < handle
                     end
                 end
                 
+                marked_rank
+                tree_height
+                loop_depth
                 min_dist_frontier_idx
+                
+                parent = current_node.getParent();
+                uncles = []
+                
+                if ~isempty(parent)
+                    grandparent = parent.getParent();
+                    if ~isempty(grandparent)
+                        uncles = grandparent.getChildren();
+                    end
+                end
+                
+                if ~isempty(uncles)
+                    uncle_vec = zeros(uncles.size(),1);
+                    for i = 1:uncles.size()
+                        uncle = uncles.get(i-1).getContent();
+                        if ~isequal(uncle, current_node.getParent().getContent()) && ~uncles.get(i-1).isMarked() && ~uncles.get(i-1).isVisited()
+                           %uncle_vec(i) = JFrontier.getDistance(uncle.center_x, uncle.center_y, obj.pose(1), obj.pose(2));
+                           uncle_vec(i) = planner.reachability_map(uncle.center_x, uncle.center_y);
+                        else
+                           uncle_vec(i) = NaN; 
+                        end
+                    end
+                    if min(distance_vec) < min(uncle_vec)
+                        min_dist_frontier_idx = input('get frontier index\n'); 
+                    end
+                end
                 
                 %if isempty(in) |  ~isempty(loop_node)
                 if ~isempty(loop_node)
-                    min_dist_frontier_idx = input('get frontier index\n'); 
-                %else
-                %   min_dist_frontier_idx = input('get frontier index\n');  
+                   min_dist_frontier_idx = input('get frontier index\n'); 
                 end
                 
                 %if go_to_index > 0 && calc_counter < go_to_index

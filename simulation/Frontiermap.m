@@ -80,6 +80,7 @@ classdef Frontiermap < handle
             
             subplot(2,4,8)%, imshow(frontier_img);
             obj.draw();
+            
 %            los_map = obj.map.visibility_map;
 %            for i = 1:size(obj.frontiers_convex_hull)-1
 %                f =  obj.frontiers_convex_hull(i);
@@ -512,12 +513,16 @@ classdef Frontiermap < handle
         end
         function [in, out] = inRange(obj, robot)
             global color_map;
+            global calc_counter;
             [m,n] = size(obj.map.visibility_map);
             in = Frontier.empty();
             out = Frontier.empty();
             
-           % sensing_map = obj.map.generateSensingMap(robot.pose, robot.sensor.radius+2*robot.robot_size+1);
-           sensing_map = obj.map.generateSensingMap(robot.pose, robot.sensor.radius+15);
+           sensing_map = obj.map.generateSensingMap(robot.pose, robot.sensor.radius+robot.robot_size+1);
+           
+           
+           
+           %sensing_map = obj.map.generateSensingMap(robot.pose, robot.sensor.radius+15);
             for i = 1:size(obj.frontiers,1)
                 frontier = obj.frontiers(i);
                 sensing_map(frontier.center(1), frontier.center(2)) = 4;
@@ -527,11 +532,16 @@ classdef Frontiermap < handle
             sense_img = ind2rgb(sensing_map, color_map);
             imshow(sense_img);
             
+            local_planner = PathPlanner(sensing_map, m, n, robot.robot_size+1, true);
+            local_map = local_planner.planCostMap(robot.pose(1), robot.pose(2), false);
+            
+            local_map_s = sprintf('~/research/frontier_exploration/simulation/local_map/local_map_%d.png', calc_counter);
+            imwrite(local_map, parula(256), local_map_s);
+            
             for i = 1:size(obj.frontiers,1)
                 frontier = obj.frontiers(i);
                 if frontier.getDistance(robot.pose) <= robot.sensor.radius
-                    local_planner = PathPlanner(sensing_map, m, n, robot.robot_size+1, true);
-                    local_map = local_planner.planCostMap(robot.pose(1), robot.pose(2), false);
+                    
                     local_path = local_planner.generatePath(frontier.center(1), frontier.center(2));
                     if ~isempty(local_path)
                         in = [in; frontier];
@@ -550,10 +560,14 @@ classdef Frontiermap < handle
         end
         function draw(obj)
             global color_map;
+            global calc_counter;
             frontier_img = ind2rgb(obj.frontier_map, color_map);
             
             %figure(h);
             imshow(frontier_img);
+            
+            frontier_map_s = sprintf('~/research/frontier_exploration/simulation/frontier_map/frontier_map_%d.png', calc_counter);
+            imwrite(frontier_img, frontier_map_s);
             
             [m, n] = size(obj.frontier_color_map);
             obj.frontier_color_map = zeros(m,n);
