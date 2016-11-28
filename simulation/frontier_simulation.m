@@ -37,7 +37,19 @@ t_h = 0.01;
 
 robot_radius = 2;
 
-%fprintf(log, 'sigma %d, omega %d, theta %d, t_h %d\n', sigma, omega, theta, t_h);
+rmdir('frontier_map', 's');
+rmdir('local_map', 's');
+rmdir('occupancy_map', 's');
+rmdir('r_map', 's');
+rmdir('tree', 's');
+rmdir('frontier_map_id', 's');
+
+mkdir('frontier_map');
+mkdir('local_map');
+mkdir('occupancy_map');
+mkdir('r_map');
+mkdir('tree');
+mkdir('frontier_map_id', 's');
 
 path = '~/research/frontier_exploration/map_19.bmp';
 occupancy_map_pixel = imread(path);
@@ -47,16 +59,17 @@ occupancy_map = rgb2ind(occupancy_map_pixel,color_map);
 sensor = Sensor(occupancy_map,robot_radius,30, pi);
 map = Map(m, n);
 
-%r = Robot(robot_radius, [20 20], sensor, map); %map 11
+
+%r = Robot(robot_radius, [140 30], sensor, map); %map 30
+r = Robot(robot_radius, [180 180], sensor, map); %map 11
 %r = Robot(robot_radius, [170 150], sensor, map); %map 11
-
-%r = Robot(robot_radius, [20 60], sensor, map); %hq nn
-r = Robot(robot_radius, [180 180], sensor, map);
-
-%r = Robot(2, [210 210], sensor, map);
+%
+%r = Robot(robot_radius, [20 20], sensor, map); %hq nn
+%r = Robot(robot_radius, [120 120], sensor, map);
+%r = Robot(2, [20 60], sensor, map);
 
 %r = Robot(2, [20 120], sensor, map);
-%r = Robot(2, [40 220], sensor, map);
+%r = Robot(2, [220 40], sensor, map);
 %r.explore(sigma, omega, theta, t_h);2
 %r.exploreUspace();
 %r.exploreCloseFrontiers3DSegmented();

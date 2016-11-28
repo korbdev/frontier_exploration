@@ -52,6 +52,12 @@ classdef Robot < handle
             global frontier_memory;
             global saved_frontier_memory;
             global calc_counter;
+            
+            
+            avg_vec = [];
+           step_vec = []
+           journey_vec = [];
+            
             clims = [0 500];
             calc_counter = 0;
             percent = 0;
@@ -100,7 +106,7 @@ classdef Robot < handle
                 %remeasure
                 planner.map = obj.map.visibility_map;
                 r_map = planner.planCostMap(obj.pose(1), obj.pose(2), false);
-                sm = planner.safety_map;
+                sm = planner.safety_map; 
                 
                 subplot(2,4,5);
                 imagesc(r_map);
@@ -123,12 +129,37 @@ classdef Robot < handle
                 distance_mat = zeros(size(leafs,1), size(out,1));
                 
                 for i = 1:size(leafs,1)
+                    h6 = subplot(2,4,6)
+                    xlim([0 240]);
+                    ylim([0 240]);
+                    view([90 -270])
+                    hold on;
+
+                    %plot leafs
+                    for o = 1:size(leafs,1)
+                        leaf = leafs(o).getContent();
+                        if ~isequal(leaf, current_node.getContent())
+                            plot(leaf.center_x, leaf.center_y, 'b+', 'MarkerSize', 10);
+                        end
+                    end
+
+                    for o = 1:size(out,1)
+                        out_f = out(o);
+                        plot(out_f.center(1), out_f.center(2), 'go', 'MarkerSize', 10);
+                    end
+
+                    
                     leaf = leafs(i).getContent();
                     if ~isequal(leaf, current_node.getContent())
                         if ~isempty(out)
                             for j = 1:size(out,1)
                                out_f = out(j);
-                               distance_mat(i, j) = JFrontier.getDistance(leaf.center_x, leaf.center_y, out_f.center(1), out_f.center(2))
+                               distance_mat(i, j) = JFrontier.getDistance(leaf.center_x, leaf.center_y, out_f.center(1), out_f.center(2));
+                               leaf_out = [leaf.id out_f.id]
+                               distance_l_o = distance_mat(i, j)       
+                               
+                               plot([leaf.center_x out_f.center(1)], [leaf.center_y out_f.center(2)], 'r-');
+                               %plot([0 240], [0 240]
                             end
                         else
                             ftree.mark(leafs(i).getContent());
@@ -136,9 +167,14 @@ classdef Robot < handle
                     else
                         distance_mat(i,:) = NaN;
                     end
+                    hold off;
+                    delete(h6);
                 end
-                
+
+
                 min_distances = min(distance_mat,[], 2)
+                
+                
                 
                 delete_node = [];
                 
@@ -150,7 +186,7 @@ classdef Robot < handle
                 end   
                 
                 temp_distance_mat = distance_mat;
-                temp_distance_mat(delete_node ~= 1) = 0;
+                temp_distance_mat(delete_node ~= 1) = NaN;
                 
                 marked_rank = 0;
                 loop_depth = 0;
@@ -160,15 +196,16 @@ classdef Robot < handle
                     if sum(delete_node(:,i)) > 1
                         distance_column = temp_distance_mat(:,i)
                         for j = 1:size(distance_column)
-                            min_dist = min(distance_mat(:,i));
+                            min_dist = min(temp_distance_mat(:,i));
                             if distance_column(j) > min_dist
                                 leaf = leafs(j);
                                 leaf_height = leaf.getRank();
                                 loop_depth = tree_height -leaf_height
-                                if loop_depth > 1
+                                if loop_depth > 2
                                    loop_node = leaf;
                                 end
                                 marked_rank = leaf.getRank();
+                                leaf.getContent().id;
                                 ftree.mark(leaf.getContent());
                                 %delete all other entries in delete_node
                                 %this node is already marked and will not
@@ -204,6 +241,8 @@ classdef Robot < handle
                 
                 min_distance_leaf = min(distance_vec);
                 
+                frontiers = obj.map.frontier_map.frontiers;
+                
                 %fill tree with elements in range
                 if ~isempty(in)
                     for i = 1:size(in,1)
@@ -211,28 +250,28 @@ classdef Robot < handle
                         in_x = in(i).jFrontier.points_x
                         ftree.insert(current_node.getContent(), in(i).jFrontier);
                     end
+                    frontier_set = in;
                 else
                     marked_rank = current_node.getRank();
                     ftree.mark(current_node.getContent());
+                    frontier_set = frontiers;
                 end
                 tree_s = sprintf('tree/tree_%d', calc_counter);
                 ftree.draw(tree_s);
 
-                frontiers = obj.map.frontier_map.frontiers;
-                
                 %Extract nearest Neighbour frontier
                 dist_robot_frontier = Inf;
                 min_dist_frontier_idx = 0;
                 paths_length = [];
-                for i=1:size(frontiers,1)
-                    temp_frontier = frontiers(i);
+                for i=1:size(frontier_set,1)
+                    temp_frontier = frontier_set(i);
 
                     distance = planner.reachability_map(temp_frontier.center(1), temp_frontier.center(2));
                     paths_length = [paths_length; distance];
 
                     if distance < dist_robot_frontier
                         dist_robot_frontier = distance;
-                        min_dist_frontier_idx = i;
+                        min_dist_frontier_idx = obj.map.frontier_map.getFrontierId(temp_frontier.center(1), temp_frontier.center(2));
                     end
                 end
                 
@@ -263,13 +302,49 @@ classdef Robot < handle
                         end
                     end
                     if min(distance_vec) < min(uncle_vec)
-                        min_dist_frontier_idx = input('get frontier index\n'); 
+                        %min_dist_frontier_idx = input('get frontier index\n'); 
                     end
                 end
                 
                 %if isempty(in) |  ~isempty(loop_node)
                 if ~isempty(loop_node)
-                   min_dist_frontier_idx = input('get frontier index\n'); 
+                   %check parent nodes
+                   
+                   foundNode = 0;
+                   pnode = loop_node.getParent().getParent()
+                   while ~isempty(pnode) && ~foundNode
+                       children = pnode.getChildren()
+                       for i=1:children.size()
+                          if ~foundNode
+                          child = children.get(i-1)
+                            if ~child.isMarked() && ~child.isVisited()
+                                foundNode=1;
+                                id = obj.map.frontier_map.getFrontierId(child.getContent().center_x, child.getContent().center_y)
+                                min_dist_frontier_idx = id
+                            end
+                          end
+                       end
+                       pnode = pnode.getParent()
+                   end
+                   
+                   if ~foundNode
+                       pnode = current_node.getParent().getParent()
+                       while ~isempty(pnode) && ~foundNode
+                           children = pnode.getChildren()
+                           for i=1:children.size()
+                              if ~foundNode
+                              child = children.get(i-1)
+                                if ~child.isMarked() && ~child.isVisited()
+                                    foundNode=1;
+                                    id = obj.map.frontier_map.getFrontierId(child.getContent().center_x, child.getContent().center_y)
+                                    min_dist_frontier_idx = id
+                                end
+                              end
+                           end
+                           pnode = pnode.getParent()
+                       end
+                   end
+                   %min_dist_frontier_idx = input('get frontier index\n'); 
                 end
                 
                 %if go_to_index > 0 && calc_counter < go_to_index
@@ -282,16 +357,45 @@ classdef Robot < handle
                 saved_frontier_memory
                 save('memory.mat', 'frontier_memory');
                 
-                
+                if min_dist_frontier_idx == 0
+                    min_dist_frontier_idx = input('get frontier index\n')
+                end
                 %calculate Frontier Tree
                 frontier = obj.map.frontier_map.frontiers(uint32(min_dist_frontier_idx));
                 current_node = ftree.findClosestNode(frontier.jFrontier);
-                     
+                current_node.visit();
                 fprintf('Current Node %s\n',current_node.getContent().toString()); 
+                
+                %journey_sum = journey_sum + dist_robot_frontier;
+                %avg_journey = journey_sum/calc_counter
+                %dist_robot_frontier
                 
                 dist_robot_frontier = planner.reachability_map(frontier.center(1), frontier.center(2));
                 journey_sum = journey_sum + dist_robot_frontier;
                 avg_journey = journey_sum/calc_counter;
+                
+                
+                %dist_robot_frontier = planner.reachability_map(frontier.center(1), frontier.center(2));
+                %journey_sum = journey_sum + dist_robot_frontier;
+                %avg_journey = journey_sum/calc_counter
+                
+                avg_vec = [avg_vec avg_journey];
+                step_vec = [step_vec dist_robot_frontier]
+                journey_vec = [journey_vec journey_sum];
+                
+                save('data_FTA.mat', 'avg_vec', 'step_vec', 'journey_vec');
+                
+                subplot(2,4,5)
+                X = 1:1:calc_counter;
+                Y_percent = [Y_percent percent];
+                Y = [Y journey_sum];
+                plot(X, Y_percent, 'r', X, Y, 'b');
+                
+                subplot(2,4,6)
+                X = 1:1:calc_counter;
+                Y_avg_travel = [Y_avg_travel avg_journey];
+                Y_travel = [Y_travel dist_robot_frontier];
+                plot(X, Y_travel, 'r', X, Y_avg_travel, 'b');
                 
                 %generate Path
                 path = planner.generatePath(frontier.center(1), frontier.center(2));   
@@ -559,7 +663,13 @@ classdef Robot < handle
             global log;
             global color_map;
             global total_path_length;
+            global calc_counter;
             %planner = Planner(obj);
+            
+            avg_vec = [];
+            step_vec = []
+            journey_vec = [];
+            
             clims = [0 500];
             calc_counter = 0;
             percent = 0;
@@ -618,13 +728,13 @@ classdef Robot < handle
 
                 thresh = .05;
                 [BW, D] = imsegfmm(W, mask, thresh);
-                subplot(2, 4, 5);
-                imshow(BW)
-                title('Segmented Image')
+                %subplot(2, 4, 5);
+                %imshow(BW)
+                %title('Segmented Image')
 
-                subplot(2, 4, 6);
-                imshow(D)
-                title('Geodesic Distances')
+                %subplot(2, 4, 6);
+                %imshow(D)
+                %title('Geodesic Distances')
                 
                                 %%calculate FrontierGraph
                 %FG = FrontierGraph(obj.map.frontier_map.frontiers, obj.map, planner);
@@ -649,10 +759,28 @@ classdef Robot < handle
                 end
                 
                 frontier = obj.map.frontier_map.frontiers(min_dist_frontier_idx);
-
+                
                 dist_robot_frontier = planner.reachability_map(frontier.center(1), frontier.center(2));
                 journey_sum = journey_sum + dist_robot_frontier;
                 avg_journey = journey_sum/calc_counter
+                
+                avg_vec = [avg_vec avg_journey];
+                step_vec = [step_vec dist_robot_frontier]
+                journey_vec = [journey_vec journey_sum];
+                
+                save('data_NN.mat', 'avg_vec', 'step_vec', 'journey_vec');
+                
+                subplot(2,4,5)
+                X = 1:1:calc_counter;
+                Y_percent = [Y_percent percent];
+                Y = [Y journey_sum];
+                plot(X, Y_percent, 'r', X, Y, 'b');
+                
+                subplot(2,4,6)
+                X = 1:1:calc_counter;
+                Y_avg_travel = [Y_avg_travel avg_journey];
+                Y_travel = [Y_travel dist_robot_frontier];
+                plot(X, Y_travel, 'r', X, Y_avg_travel, 'b');
                 
                 path = planner.generatePath(frontier.center(1), frontier.center(2));   
                 
@@ -700,8 +828,10 @@ classdef Robot < handle
                 
                 fprintf(log,'iteration %d, path travelled %d, percent explored %f(+%f)\n', calc_counter,total_path_length, percent, ((percent-old_percent)*100));
 
-                str = sprintf('~/research/frontier_exploration/output/D_%d.png', calc_counter);
+                r_map_s = sprintf('~/research/frontier_exploration/simulation/r_map/rmap_%d.png', calc_counter);
+                imwrite(r_map, parula(256), r_map_s);
                 
+                str = sprintf('~/research/frontier_exploration/output/D_%d.png', calc_counter);
                 imwrite(D,str);
                 
                 obj.map.frontier_map.createFrontierMap(obj.pose, 0, 0, sm);
@@ -873,23 +1003,23 @@ classdef Robot < handle
                 %end
                 
                 
-                %{
+                
                 journey_sum = journey_sum + dist_robot_frontier;
                 avg_journey = journey_sum/calc_counter
                 dist_robot_frontier
                 
-                subplot(2,4,3)
+                subplot(2,4,5)
                 X = 1:1:calc_counter;
                 Y_percent = [Y_percent percent];
                 Y = [Y journey_sum];
                 plot(X, Y_percent, 'r', X, Y, 'b');
                 
-                subplot(2,4,4)
+                subplot(2,4,6)
                 X = 1:1:calc_counter;
                 Y_avg_travel = [Y_avg_travel avg_journey];
                 Y_travel = [Y_travel dist_robot_frontier];
                 plot(X, Y_travel, 'r', X, Y_avg_travel, 'b');
-                %}
+                
                 %if obj.sensor.radius-obj.robot_size < avg_journey
                     %journey_sum = 0;
                     %calc_counter = 0;

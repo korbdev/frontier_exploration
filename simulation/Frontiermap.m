@@ -558,6 +558,17 @@ classdef Frontiermap < handle
                 end
             end
         end
+        function id = getFrontierId(obj, x, y)
+            id = 0;
+            for i = 1:size(obj.frontiers,1)
+                frontier = obj.frontiers(i);
+                frontier.center
+                xy = [x y]
+                if frontier.center(1) == x && frontier.center(2) == y
+                    id = frontier.id
+                end
+            end
+        end
         function draw(obj)
             global color_map;
             global calc_counter;
@@ -569,6 +580,7 @@ classdef Frontiermap < handle
             frontier_map_s = sprintf('~/research/frontier_exploration/simulation/frontier_map/frontier_map_%d.png', calc_counter);
             imwrite(frontier_img, frontier_map_s);
             
+ 
             [m, n] = size(obj.frontier_color_map);
             obj.frontier_color_map = zeros(m,n);
             num_frontiers = size(obj.frontiers, 1);
@@ -611,6 +623,10 @@ classdef Frontiermap < handle
                 pos_x = floor(mean(obj.frontiers(i).points(:,2)));
                 frontier_color_img = insertText(frontier_color_img,[pos_x pos_y],s);
             end
+            
+            frontier_map_id = sprintf('~/research/frontier_exploration/simulation/frontier_map_id/frontier_map_id_%d.png', calc_counter);
+            imwrite(frontier_color_img, frontier_map_id);
+            
             imshow(frontier_color_img);
         end
     end

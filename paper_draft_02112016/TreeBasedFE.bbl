@@ -1,0 +1,55 @@
+\begin{thebibliography}{1}
+\providecommand{\url}[1]{{#1}}
+\providecommand{\urlprefix}{URL }
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{DOI~\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{DOI~\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+
+\bibitem{amir_mobarhani_histogram_2011}
+{Amir Mobarhani}, {Shaghayegh Nazari}, {Amir H. Tamjidi}, {Hamid D. Taghirad}:
+  Histogram {Based} {Frontier} {Exploration}  (2011)
+
+\bibitem{arnoud_visser_balancing_2008}
+{Arnoud Visser}, {B.A. Slamet}: Balancing the information gain against the
+  movement cost for multi-robot frontier exploration.
+\newblock In: European {Robotics} {Symposium} 2008 by {H}. {Bruyninckx} \& {L}.
+  {Přeučil} \& {M}. {Kulich}. Prague (2008)
+
+\bibitem{benjamin_tovar_optimal_2003}
+{Benjamin Tovar}, {Steven M. LaValle}, {Rafael Murrieta}: Optimal {Navigation}
+  and {Object} {Finding} without {Geometric} {Maps} or {Localization}.
+\newblock In: Robotics and {Automation}, 2003. {Proceedings}. {ICRA} '03 (2003)
+
+\bibitem{brian_yamauchi_frontier-based_2007}
+{Brian Yamauchi}: A frontier-based approach for autonomous exploration.
+\newblock In: {CIRA}'97., {Proceedings} (2007).
+\newblock \doi{10.1109/CIRA.1997.613851}
+
+\bibitem{dirk_holz_evaluating_2010}
+{Dirk Holz}, {Nicola Basilico}, {Francesco Amigoni}, {Sven Behnke}: Evaluating
+  the {Efficiency} of {Frontier}-based {Exploration} {Strategies} (2010)
+
+\bibitem{kai_m._wurm_coordinated_2008}
+{Kai M. Wurm}, {Cyrill Stachniss}, {Wolfram Burgard}: Coordinated
+  {Multi}-{Robot} {Exploration} using a {Segmentation} of the {Environment}
+  (2008)
+
+\bibitem{reem_nasir_gap_2015}
+{Reem Nasir}, {Ashraf Elnagar}: Gap {Navigation} {Trees} for {Discovering}
+  {Unknown} {Environments}.
+\newblock Intelligent Control and Automation \textbf{2015}(6), 229--240 (2015)
+
+\bibitem{robert_grabowski_autonomous_2003}
+{Robert Grabowski}, {Pradeep Khosla}, {Howie Choset}: Autonomous {Exploration}
+  via {Regions} of {Interest}.
+\newblock In: Proceedings of the 2003 {IEEE} {Intl}. {Conference} on
+  lntelligent {Robots} and {Systems}. Las Vegas (2003)
+
+\bibitem{sven_koenig_greedy_2001}
+{Sven Koenig}, {Craig Tovey}, {William Halliburton}: Greedy mapping of terrain.
+\newblock In: Robotics and {Automation}, 2001. {Proceedings} 2001 {ICRA}
+  (2001).
+\newblock \doi{10.1109/ROBOT.2001.933175}
+
+\end{thebibliography}

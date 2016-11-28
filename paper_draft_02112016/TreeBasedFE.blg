@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2013/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: TreeBasedFE.aux
+The style file: spmpsci.bst
+Database file #1: ft_bib.bib
+Warning--empty journal in amir_mobarhani_histogram_2011
+Warning--empty booktitle in dirk_holz_evaluating_2010
+Warning--empty booktitle in kai_m._wurm_coordinated_2008
+You've used 9 entries,
+            2946 wiz_defined-function locations,
+            644 strings with 6327 characters,
+and the built_in function-call counts, 4294 in all, are:
+= -- 366
+> -- 143
+< -- 0
++ -- 66
+- -- 50
+* -- 222
+:= -- 553
+add.period$ -- 10
+call.type$ -- 9
+change.case$ -- 62
+chr.to.int$ -- 0
+cite$ -- 12
+duplicate$ -- 434
+empty$ -- 369
+format.name$ -- 58
+if$ -- 891
+int.to.chr$ -- 0
+int.to.str$ -- 9
+missing$ -- 83
+newline$ -- 43
+num.names$ -- 18
+pop$ -- 203
+preamble$ -- 1
+purify$ -- 43
+quote$ -- 0
+skip$ -- 154
+stack$ -- 0
+substring$ -- 95
+swap$ -- 241
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 36
+warning$ -- 3
+while$ -- 21
+width$ -- 10
+write$ -- 89
+(There were 3 warnings)
