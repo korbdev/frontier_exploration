@@ -29,12 +29,4 @@ function draw(robot, map)
     subplot(2,4,2)
     map_img = ind2rgb(robot.sensor.occupancy_map-1, color_map);
     imshow(map_img);
-    
-    %subplot(2,3,3)%, imshow(frontier_img);
-    %map.frontier_map.draw();
-    
-    %if ~isempty(map.frontier_map.theta_list)
-    %    [tout, rout] = rose(map.frontier_map.theta_list, map.frontier_map.bins);
-    %    subplot(2,4,3), polar(tout, rout), set(gca,'View',[0 -90]);
-    %end
 end
